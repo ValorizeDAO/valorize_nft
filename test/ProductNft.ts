@@ -51,7 +51,12 @@ describe.only("ProductNft", () => {
     });
 
     it("decreases the tokens that are left after a rarest mint", async () => {
-
+      const overridesRarest = {value: ethers.utils.parseEther("7.5")}
+      const tokensLeftBeforeMint = ethers.BigNumber.from(await productNft.rarestTokensLeft());
+      const mintAmount = 5;
+      await productNft.rarestBatchMint(mintAmount, overridesRarest);
+      const tokensLeftAfterMint = ethers.BigNumber.from(await productNft.rarestTokensLeft());
+      expect(tokensLeftBeforeMint).to.equal(tokensLeftAfterMint.add(5));
     }) 
 
     it("batch mints too many rarest NFTs", async () => {
@@ -132,6 +137,20 @@ describe.only("ProductNft", () => {
       const tokenId = await productNft.rarestTokenIds();
       const findTokenURI = await productNft._URI(tokenId);
       expect(findTokenURI).to.equal("https://token-cdn-domain/" + tokenId + ".json");
+    });
+  });
+
+  describe("emit token Info by tokenId", async () => {
+    beforeEach(setupProductNft)
+
+    it("returns the rarity when tokenId is given", async() => {
+      const tokenIdList = [1, 3, 5, 7, 8];
+      const getTokenInfo = await productNft.emitTokenInfo(tokenIdList[1]);
+      const getTokenURI = await productNft.URIS(tokenIdList[1]);
+      const rarity = await productNft.returnRarityByTokenId(tokenIdList[1])
+      expect(getTokenInfo).to.emit(productNft, "returnTokenInfo").withArgs(
+        tokenIdList[1], rarity, getTokenURI
+      );
     });
   });
 });

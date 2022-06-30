@@ -142,7 +142,7 @@ contract ProductNft is ERC1155 {
         }
     }
 
-    function reduceTokensLeft(uint16 amount, Rarity rarity) internal {
+    function _reducesTokensLeft(uint16 amount, Rarity rarity) internal {
         for(uint16 i; i < _turnAmountIntoArray(amount).length;) {
             if (rarity == Rarity.rarest) {
                 rarestTokensLeft--;
@@ -151,9 +151,9 @@ contract ProductNft is ERC1155 {
             } else if (rarity == Rarity.rare) {
                 rareTokensLeft--;
             }
-        unchecked {
-            i++;
-        }  
+            unchecked {
+                i++;
+            }  
         }
     }
 
@@ -168,7 +168,7 @@ contract ProductNft is ERC1155 {
         require(PRICE_PER_RAREST_TOKEN * amount <= msg.value, "Ether value sent is not correct");
         require(amount >= 1, "You need to mint atleast one NFT");   
         _mintBatch(msg.sender, _turnTokenIdsIntoArray(Rarity.rarest, amount), _turnAmountIntoArray(amount), '');
-        reduceTokensLeft(amount, Rarity.rarest);
+        _reducesTokensLeft(amount, Rarity.rarest);
     }
 
     /**
@@ -182,7 +182,7 @@ contract ProductNft is ERC1155 {
         require(PRICE_PER_RARER_TOKEN * amount <= msg.value, "Ether value sent is not correct");
         require(amount >= 1, "You need to mint atleast one NFT");   
         _mintBatch(msg.sender, _turnTokenIdsIntoArray(Rarity.rarer, amount), _turnAmountIntoArray(amount), '');
-        reduceTokensLeft(amount, Rarity.rarer);
+        _reducesTokensLeft(amount, Rarity.rarer);
     }
 
     /**
@@ -196,6 +196,6 @@ contract ProductNft is ERC1155 {
         require(PRICE_PER_RARE_TOKEN * amount <= msg.value, "Ether value sent is not correct");
         require(amount >= 1, "You need to mint atleast one NFT");   
         _mintBatch(msg.sender, _turnTokenIdsIntoArray(Rarity.rare, amount), _turnAmountIntoArray(amount), '');
-        reduceTokensLeft(amount, Rarity.rare);
+        _reducesTokensLeft(amount, Rarity.rare);
     }
 }
