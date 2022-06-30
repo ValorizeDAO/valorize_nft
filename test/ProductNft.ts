@@ -3,8 +3,8 @@ import { BigNumber, Contract, Signer } from "ethers";
 import chai from "chai";
 import { solidity } from "ethereum-waffle";
 import { getAddress } from "@ethersproject/address";
-import { ProductNft } from "../typechain/ProductNft";
-import { ProductNftFactory } from "../typechain/ProductNftFactory";
+import { ExposedProductNft } from "../typechain/ExposedProductNft";
+import { ExposedProductNftFactory } from "../typechain/ExposedProductNftFactory";
 import { string } from "hardhat/internal/core/params/argumentTypes";
 
 chai.use(solidity);
@@ -17,7 +17,7 @@ const START_RARE = 1012;
 const TOTAL_AMOUNT = 2012;
 
 describe.only("ProductNft", () => {
-  let productNft: ProductNft,
+  let productNft: ExposedProductNft,
     deployer: Signer,
     admin1: Signer,
     admin2: Signer,
@@ -26,7 +26,7 @@ describe.only("ProductNft", () => {
 
   const setupProductNft = async () => {
     [deployer, admin1, admin2, vault, ...addresses] = await ethers.getSigners();
-    productNft = await new ProductNftFactory(deployer).deploy(BASE_URI, START_RARER, START_RARE, TOTAL_AMOUNT);
+    productNft = await new ExposedProductNftFactory(deployer).deploy(BASE_URI, START_RARER, START_RARE, TOTAL_AMOUNT);
     await productNft.deployed();
   };
 
@@ -40,6 +40,13 @@ describe.only("ProductNft", () => {
 
   describe("Minting rarest, rarer and rare NFTs", async () => {
     beforeEach(setupProductNft)
+
+    it("mints the next token Id by following a counter", async () => {
+      const tokenCountBeforeIncrement = await productNft.rarestTokenIds();
+      await productNft.countBasedOnRarity(0);
+      const tokenCountAfterIncrement = await productNft.rarestTokenIds();
+      expect(tokenCountAfterIncrement).to.equal(tokenCountBeforeIncrement.add(1));
+    })
 
     it("batch mints a rarest NFT", async () => {
       const overridesRarest = {value: ethers.utils.parseEther("7.5")}
@@ -59,7 +66,7 @@ describe.only("ProductNft", () => {
       expect(tokensLeftBeforeMint).to.equal(tokensLeftAfterMint.add(5));
     }) 
 
-    it("batch mints too many rarest NFTs", async () => {
+    it("fails to batch mint rarest NFTs if sold out", async () => {
       const overridesRarest = {value: ethers.utils.parseEther("20")}
       const mintAmount = 13;
       await expect(productNft.rarestBatchMint(mintAmount, overridesRarest)
