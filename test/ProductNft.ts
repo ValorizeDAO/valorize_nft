@@ -57,7 +57,7 @@ describe.only("ProductNft", () => {
       expect(tokenCountAfterMint).to.equal(tokenCountBeforeMint.add(5));
     });
 
-    it("decreases the tokens that are left after a rarest mint", async () => {
+    it("decreases the amount of tokens that are left after a rarest mint", async () => {
       const overridesRarest = {value: ethers.utils.parseEther("7.5")}
       const tokensLeftBeforeMint = ethers.BigNumber.from(await productNft.rarestTokensLeft());
       const mintAmount = 5;

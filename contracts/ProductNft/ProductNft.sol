@@ -50,10 +50,19 @@ contract ProductNft is ERC1155 {
         rareTokensLeft = _totalAmountOfTokenIds - _startRareTokenIdIndex;
     }
 
+    /**
+    * @dev  This function returns the token information 
+    *       This includes token id, rarity and URI
+    * @param _tokenId is the token Id of the NFT of interest
+    */
     function emitTokenInfo(uint256 _tokenId) public {
       emit returnTokenInfo(_tokenId, returnRarityByTokenId(_tokenId), URIS[_tokenId]);
     }
 
+    /**
+    * @dev  This function returns the token rarity
+    * @param _tokenId is the token Id of the NFT of interest
+    */
     function returnRarityByTokenId(uint256 _tokenId) public view returns (string memory rarity) {
         if(_tokenId < startRarerTokenIdIndex) {
             return "Mycelia";
@@ -116,7 +125,7 @@ contract ProductNft is ERC1155 {
         }
     }
 
-    function _setURI(uint256 tokenId) internal {
+    function _setURIandEmitTokenInfo(uint256 tokenId) internal {
             URIS[tokenId] = _URI(tokenId);
             emitTokenInfo(tokenId);
     }
@@ -135,7 +144,7 @@ contract ProductNft is ERC1155 {
         for (uint16 i = 0; i < _turnAmountIntoArray(amount).length;) { 
             uint256 currentTokenId = _countBasedOnRarity(rarity);
             tokenIdArray[i] = currentTokenId;
-            _setURI(currentTokenId);
+            _setURIandEmitTokenInfo(currentTokenId);
             unchecked {
                 i++;
             }  
