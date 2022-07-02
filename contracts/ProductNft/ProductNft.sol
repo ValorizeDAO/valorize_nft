@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
-@title MembershipNft
+@title ProductNft
 @author Marco Huberts & Javier Gonzalez
-@dev    Implementation of a Valorize Product Non Fungible Token using ERC721.
+@dev    Implementation of a Valorize Product Non Fungible Token using ERC1155.
 *       Key information: the metadata should be ordered. The rarest NFTs should be the lowest tokenIds, then rarer and then rare NFTs.
 */
 
