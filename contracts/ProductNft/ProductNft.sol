@@ -17,13 +17,13 @@ contract ProductNft is ERC1155 {
 
     uint16 public startRarerTokenIdIndex;
     uint16 public startRareTokenIdIndex;
-    uint16 totalAmountOfTokenIds;
+    uint16 public totalAmountOfTokenIds;
     uint16 public rarestTokensLeft;
     uint16 public rarerTokensLeft;
     uint16 public rareTokensLeft;
-    Counters.Counter public rarestTokenIds;
-    Counters.Counter public rarerTokenIds;
-    Counters.Counter public rareTokenIds;
+    Counters.Counter public rarestTokenIdCounter;
+    Counters.Counter public rarerTokenIdCounter;
+    Counters.Counter public rareTokenIdCounter;
     uint256 public constant PRICE_PER_RAREST_TOKEN = 1.5 ether;
     uint256 public constant PRICE_PER_RARER_TOKEN = 0.55 ether;
     uint256 public constant PRICE_PER_RARE_TOKEN = 0.2 ether;
@@ -55,7 +55,7 @@ contract ProductNft is ERC1155 {
     *       This includes token id, rarity and URI
     * @param _tokenId is the token Id of the NFT of interest
     */
-    function emitTokenInfo(uint256 _tokenId) public {
+    function _emitTokenInfo(uint256 _tokenId) internal {
       emit returnTokenInfo(_tokenId, returnRarityByTokenId(_tokenId), URIS[_tokenId]);
     }
 
@@ -108,18 +108,18 @@ contract ProductNft is ERC1155 {
     */
     function _countBasedOnRarity(Rarity rarity) internal returns (uint256 tokenId) {
         if(rarity == Rarity.rarest) {
-            rarestTokenIds.increment();
-            tokenId = rarestTokenIds.current();
+            rarestTokenIdCounter.increment();
+            tokenId = rarestTokenIdCounter.current();
             require(tokenId <= startRarerTokenIdIndex, "Mycelia NFTs are sold out");
             return tokenId;   
         } else if (rarity == Rarity.rarer) {
-            rarerTokenIds.increment();
-            tokenId = startRarerTokenIdIndex + rarerTokenIds.current();
+            rarerTokenIdCounter.increment();
+            tokenId = startRarerTokenIdIndex + rarerTokenIdCounter.current();
             require(tokenId >= startRarerTokenIdIndex && tokenId <= startRareTokenIdIndex, "Diamond NFTS are sold out");
             return tokenId;
-        } else if (rarity == Rarity.rare) {
-            rareTokenIds.increment();
-            tokenId = startRareTokenIdIndex + rareTokenIds.current();
+        } else {
+            rareTokenIdCounter.increment();
+            tokenId = startRareTokenIdIndex + rareTokenIdCounter.current();
             require(tokenId <= totalAmountOfTokenIds, "Silver NFTs are sold out");
             return tokenId;
         }
@@ -127,7 +127,7 @@ contract ProductNft is ERC1155 {
 
     function _setURIandEmitTokenInfo(uint256 tokenId) internal {
             URIS[tokenId] = _URI(tokenId);
-            emitTokenInfo(tokenId);
+            _emitTokenInfo(tokenId);
     }
 
     /**

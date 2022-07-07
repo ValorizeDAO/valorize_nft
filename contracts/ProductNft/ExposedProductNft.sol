@@ -4,9 +4,9 @@ pragma solidity ^0.8.15;
 import "./ProductNft.sol";
 
 /**
-@title MembershipNft
+@title ExposedProductNft
 @author Marco Huberts & Javier Gonzalez
-@dev    Implementation of a Valorize Product Non Fungible Token using ERC721.
+@dev    Mock-implementation of a Valorize Product Non Fungible Token using ERC1155 for testing purposes
 *       Key information: the metadata should be ordered. The rarest NFTs should be the lowest tokenIds, then rarer and then rare NFTs.
 */
 
@@ -22,5 +22,9 @@ contract ExposedProductNft is ProductNft {
 
     function countBasedOnRarity(Rarity rarity) external returns (uint256) {
         return super._countBasedOnRarity(rarity);
+    }
+
+    function emitTokenInfo(uint256 _tokenId) public {
+        return _emitTokenInfo(_tokenId);
     }
 }
