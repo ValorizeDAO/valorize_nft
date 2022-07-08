@@ -6,8 +6,7 @@ import "./ProductNft.sol";
 /**
 @title ExposedProductNft
 @author Marco Huberts & Javier Gonzalez
-@dev    Mock-implementation of a Valorize Product Non Fungible Token using ERC1155 for testing purposes
-*       Key information: the metadata should be ordered. The rarest NFTs should be the lowest tokenIds, then rarer and then rare NFTs.
+@dev    Mock-implementation of a Valorize Product Non Fungible Token using ERC1155 for testing purposes.
 */
 
 contract ExposedProductNft is ProductNft {
@@ -26,5 +25,9 @@ contract ExposedProductNft is ProductNft {
 
     function emitTokenInfo(uint256 _tokenId) public {
         return _emitTokenInfo(_tokenId);
+    }
+
+    function initialProductStatusBasedOnRarity(uint256 _tokenId, Rarity rarity) public {
+        return _initialProductStatusBasedOnRarity(_tokenId, rarity);
     }
 }

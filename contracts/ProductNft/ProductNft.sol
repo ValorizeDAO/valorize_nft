@@ -4,6 +4,7 @@ pragma solidity ^0.8.15;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
 @title ProductNft
@@ -12,7 +13,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 *       Key information: the metadata should be ordered. The rarest NFTs should be the lowest tokenIds, then rarer and then rare NFTs.
 */
 
-contract ProductNft is ERC1155 {
+contract ProductNft is ERC1155, Ownable {
     using Counters for Counters.Counter;
 
     uint16 public startRarerTokenIdIndex;
@@ -29,11 +30,13 @@ contract ProductNft is ERC1155 {
     uint256 public constant PRICE_PER_RARE_TOKEN = 0.2 ether;
     string public baseURI;
 
-  mapping(uint => string) public URIS;
+    mapping(uint256 => ProductStatus) public ProductStatusByTokenId;
+    mapping(uint => string) public URIS;
+  
+    enum ProductStatus {not_ready, ready, deployed}
+    enum Rarity {rarest, rarer, rare} 
 
-  enum Rarity {rarest, rarer, rare} 
-
-  event returnTokenInfo(uint256 tokenId, string rarity, string tokenURI);
+    event returnTokenInfo(uint256 tokenId, string rarity, string tokenURI, ProductStatus);
 
   constructor( 
     string memory baseURI_,   
@@ -56,7 +59,7 @@ contract ProductNft is ERC1155 {
     * @param _tokenId is the token Id of the NFT of interest
     */
     function _emitTokenInfo(uint256 _tokenId) internal {
-      emit returnTokenInfo(_tokenId, returnRarityByTokenId(_tokenId), URIS[_tokenId]);
+      emit returnTokenInfo(_tokenId, returnRarityByTokenId(_tokenId), URIS[_tokenId], ProductStatusByTokenId[_tokenId]);
     }
 
     /**
@@ -125,9 +128,10 @@ contract ProductNft is ERC1155 {
         }
     }
 
-    function _setURIandEmitTokenInfo(uint256 tokenId) internal {
-            URIS[tokenId] = _URI(tokenId);
-            _emitTokenInfo(tokenId);
+    function _setAndEmitTokenInfo(uint256 tokenId, Rarity rarity) internal {
+        _initialProductStatusBasedOnRarity(tokenId, rarity);
+        URIS[tokenId] = _URI(tokenId);
+        _emitTokenInfo(tokenId);
     }
 
     /**
@@ -144,13 +148,19 @@ contract ProductNft is ERC1155 {
         for (uint16 i = 0; i < _turnAmountIntoArray(amount).length;) { 
             uint256 currentTokenId = _countBasedOnRarity(rarity);
             tokenIdArray[i] = currentTokenId;
-            _setURIandEmitTokenInfo(currentTokenId);
+            _setAndEmitTokenInfo(currentTokenId, rarity);
             unchecked {
                 i++;
             }  
         }
     }
 
+    /**
+    *@dev   This function reduces the amount of tokens left based on 
+    *       the amount that is be minted per rarity. 
+    *@param amount the amount of tokens minted.
+    *@param rarity the rarity of the token minted. 
+    */
     function _reducesTokensLeft(uint16 amount, Rarity rarity) internal {
         for(uint16 i; i < _turnAmountIntoArray(amount).length;) {
             if (rarity == Rarity.rarest) {
@@ -206,5 +216,42 @@ contract ProductNft is ERC1155 {
         require(amount >= 1, "You need to mint atleast one NFT");   
         _mintBatch(msg.sender, _turnTokenIdsIntoArray(Rarity.rare, amount), _turnAmountIntoArray(amount), '');
         _reducesTokensLeft(amount, Rarity.rare);
+    }
+
+    /**
+    *@dev   This function sets the product status based on rarity upon mint. 
+    *       rarities rarest and rare will be set to ready.
+    *       Minted rarer tokens will be set to not ready.
+    *@param tokenId the token Id of the token that is minted
+    *@param rarity the rarity of the token that is minted.
+    */
+    function _initialProductStatusBasedOnRarity(uint256 tokenId, Rarity rarity) internal {
+        if (rarity == Rarity.rarest || rarity == Rarity.rare) {
+            ProductStatusByTokenId[tokenId] = ProductStatus.ready;
+        } else if (rarity == Rarity.rarer) {
+            ProductStatusByTokenId[tokenId] = ProductStatus.not_ready;
+        }
+    }
+
+    /**
+    *@dev   This function will switch the status of product deployment. 
+    *       If the token has not been deployed the status will be set to ready.
+    *       This can only be done for tokens of the Diamond/Rarer rarity.
+    *       Information regarding deployment will be retrieved using an API.
+    *@param tokenIdList: the array of token Ids that is used to change the 
+    *       deployment status of a token launched using the Valorize Token Launcher
+    *@param deployed: set to true if a token has been deployed 
+    */
+    function switchProductStatus(uint256[] memory tokenIdList, bool deployed) public onlyOwner {
+        if (deployed) {
+            for(uint256 i=0; i < tokenIdList.length; i++) {
+            ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.deployed;
+            }
+        } else {
+            for(uint256 i=0; i < tokenIdList.length; i++) {
+                require(tokenIdList[i] > startRarerTokenIdIndex && tokenIdList[i] < startRareTokenIdIndex);
+                ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.ready;
+            }
+        }
     }
 }
