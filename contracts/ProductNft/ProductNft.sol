@@ -4,6 +4,7 @@ pragma solidity ^0.8.15;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import { IERC2981, IERC165 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
@@ -13,7 +14,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 *       Key information: the metadata should be ordered. The rarest NFTs should be the lowest tokenIds, then rarer and then rare NFTs.
 */
 
-contract ProductNft is ERC1155, Ownable {
+contract ProductNft is ERC1155, IERC2981, Ownable {
     using Counters for Counters.Counter;
 
     uint16 public startRarerTokenIdIndex;
@@ -29,6 +30,8 @@ contract ProductNft is ERC1155, Ownable {
     uint256 public constant PRICE_PER_RARER_TOKEN = 0.55 ether;
     uint256 public constant PRICE_PER_RARE_TOKEN = 0.2 ether;
     string public baseURI;
+    address royaltyDistributorAddress;
+    address addressProductNFTArtist;
 
     mapping(uint256 => ProductStatus) public ProductStatusByTokenId;
     mapping(uint => string) public URIS;
@@ -39,12 +42,16 @@ contract ProductNft is ERC1155, Ownable {
     event returnTokenInfo(uint256 tokenId, string rarity, string tokenURI, ProductStatus);
 
   constructor( 
-    string memory baseURI_,   
+    string memory baseURI_,
+    address _royaltyDistributorAddress,
+    address _addressProductNFTArtist,   
     uint16 _startRarerTokenIdIndex,
     uint16 _startRareTokenIdIndex,
     uint16 _totalAmountOfTokenIds
     ) ERC1155(baseURI_) {
         baseURI = baseURI_;
+        royaltyDistributorAddress = _royaltyDistributorAddress;
+        addressProductNFTArtist = _addressProductNFTArtist;
         startRarerTokenIdIndex = _startRarerTokenIdIndex;
         startRareTokenIdIndex = _startRareTokenIdIndex;
         totalAmountOfTokenIds = _totalAmountOfTokenIds;
@@ -254,4 +261,31 @@ contract ProductNft is ERC1155, Ownable {
             }
         }
     }
+
+    function supportsInterface(bytes4 interfaceId) public view override(ERC1155, IERC165) returns (bool) {
+        return interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    /**
+    * @dev  Information about the royalty is returned when provided with token id and sale price. 
+    *       Royalty information depends on token Id: if token d is smaller than 12 than the artist address is given.
+    *       If token id is bigger than 12 than the funds will be sent to the contract that distributes royalties.
+    * @param _tokenId is the tokenId of an NFT that has been sold on the NFT marketplace
+    * @param _salePrice is the price of the sale of the given token id
+    */
+    function royaltyInfo(
+        uint256 _tokenId,
+        uint256 _salePrice
+    ) external view override returns (
+        address,
+        uint256 royaltyAmount
+    ) {
+        royaltyAmount = (_salePrice / 100) * 10;
+        if (_tokenId <= startRarerTokenIdIndex) {
+            return(addressProductNFTArtist, royaltyAmount);
+        } else {
+            return(royaltyDistributorAddress, royaltyAmount); 
+        }
+    }
+    
 }
