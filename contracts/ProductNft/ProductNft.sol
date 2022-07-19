@@ -120,7 +120,7 @@ contract ProductNft is ERC1155, Ownable {
             tokenId = startRarerTokenIdIndex + rarerTokenIdCounter.current();
             require(tokenId >= startRarerTokenIdIndex && tokenId <= startRareTokenIdIndex, "Diamond NFTS are sold out");
             return tokenId;
-        } else {
+        } else if (rarity == Rarity.rare) {
             rareTokenIdCounter.increment();
             tokenId = startRareTokenIdIndex + rareTokenIdCounter.current();
             require(tokenId <= totalAmountOfTokenIds, "Silver NFTs are sold out");
@@ -234,24 +234,33 @@ contract ProductNft is ERC1155, Ownable {
     }
 
     /**
-    *@dev   This function will switch the status of product deployment. 
-    *       If the token has not been deployed the status will be set to ready.
+    *@dev   This function will switch the status of product deployment to ready. 
+    *       If the token has not been deployed and the product status is 
+    *       not_ready the status will be set to ready.
     *       This can only be done for tokens of the Diamond/Rarer rarity.
-    *       Information regarding deployment will be retrieved using an API.
     *@param tokenIdList: the array of token Ids that is used to change the 
     *       deployment status of a token launched using the Valorize Token Launcher
-    *@param deployed: set to true if a token has been deployed 
     */
-    function switchProductStatus(uint256[] memory tokenIdList, bool deployed) public onlyOwner {
-        if (deployed) {
-            for(uint256 i=0; i < tokenIdList.length; i++) {
+    function switchProductStatusToReady(uint256[] memory tokenIdList) public onlyOwner {
+        for(uint256 i=0; i < tokenIdList.length; i++) {
+            require(tokenIdList[i] > startRarerTokenIdIndex && tokenIdList[i] < startRareTokenIdIndex, "Product status is already set to ready");
+            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.not_ready, "Invalid token status");
+            ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.ready;
+        }
+    }
+
+    /**
+    *@dev   This function will switch the status of product deployment to deployed. 
+    *       If the token has been deployed and the product status is 
+    *       ready the status will be set to deployed.
+    *       This can be done for all rarities.
+    *@param tokenIdList: the array of token Ids that is used to change the 
+    *       deployment status of a token launched using the Valorize Token Launcher
+    */
+    function switchProductStatusToDeployed(uint256[] memory tokenIdList) public onlyOwner {
+        for(uint256 i=0; i < tokenIdList.length; i++) {
+            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.ready, "Your token is not ready yet");
             ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.deployed;
-            }
-        } else {
-            for(uint256 i=0; i < tokenIdList.length; i++) {
-                require(tokenIdList[i] > startRarerTokenIdIndex && tokenIdList[i] < startRareTokenIdIndex);
-                ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.ready;
-            }
         }
     }
 }

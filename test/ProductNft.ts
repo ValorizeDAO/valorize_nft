@@ -174,20 +174,35 @@ describe("ProductNft", () => {
       expect(getProductStatus).to.equal(predictedProductStatus);
     });
 
-    it("switches the product status of a minted NFT to ready", async() => {
-      const tokenIdList = [14, 19, 201, 560, 788];
-      const notDeployed = false;
-      await productNft.switchProductStatus(tokenIdList, notDeployed);
+    it("switches the product status of not_ready to ready", async() => {
+      const overridesRarest = {value: ethers.utils.parseEther("7.5")}
+      await productNft.rarerBatchMint(5, overridesRarest);
+      const tokenIdList = [13, 14, 15, 16, 17];
+      await productNft.connect(deployer).switchProductStatusToReady(tokenIdList);
       const getProductStatus = await productNft.ProductStatusByTokenId(tokenIdList[3]);
       expect(getProductStatus).to.equal(1);
     });
 
-    it("switches the product status of a minted NFT to deployed", async() => {
-      const tokenIdList = [1, 3, 5, 7, 8];
-      const deployed = true;
-      await productNft.switchProductStatus(tokenIdList, deployed);
-      const getProductStatus = await productNft.ProductStatusByTokenId(tokenIdList[0]);
+    it("switches the product status of ready to deployed", async() => {
+      const overridesRarest = {value: ethers.utils.parseEther("7.5")}
+      await productNft.rarestBatchMint(5, overridesRarest);
+      const tokenIdList = [1, 2, 3, 4, 5];
+      await productNft.connect(deployer).switchProductStatusToDeployed(tokenIdList);
+      const getProductStatus = await productNft.ProductStatusByTokenId(tokenIdList[2]);
       expect(getProductStatus).to.equal(2);
+    });
+
+    it("should fail if a token already set to ready is set to ready again", async() => {
+      const tokenIdList = [1, 3, 5, 7, 8];
+      await expect(productNft.connect(deployer).switchProductStatusToReady(tokenIdList)
+      ).to.be.revertedWith("Product status is already set to ready");
+    });
+
+    it("should fail if attempting to set a token that is not ready to status deployed", async() => {
+      //const tokenIdList = [14, 19, 201, 560, 788];
+      const tokenIdList = [1, 3, 5, 7, 8];
+      await expect(productNft.connect(deployer).switchProductStatusToDeployed(tokenIdList)
+      ).to.be.revertedWith("Your token is not ready yet");
     });
   });
 });
