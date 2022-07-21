@@ -248,7 +248,7 @@ contract ProductNft is ERC1155, IERC2981, Ownable {
     *@param tokenIdList: the array of token Ids that is used to change the 
     *       deployment status of a token launched using the Valorize Token Launcher
     */
-    function switchProductStatusToReady(uint256[] memory tokenIdList) public onlyOwner {
+    function switchProductStatusToReady(uint256[] memory tokenIdList) external onlyOwner {
         for(uint256 i=0; i < tokenIdList.length; i++) {
             require(tokenIdList[i] > startRarerTokenIdIndex && tokenIdList[i] < startRareTokenIdIndex, "Product status is already set to ready");
             require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.not_ready, "Invalid token status");
@@ -264,7 +264,7 @@ contract ProductNft is ERC1155, IERC2981, Ownable {
     *@param tokenIdList: the array of token Ids that is used to change the 
     *       deployment status of a token launched using the Valorize Token Launcher
     */
-    function switchProductStatusToDeployed(uint256[] memory tokenIdList) public onlyOwner {
+    function switchProductStatusToDeployed(uint256[] memory tokenIdList) external onlyOwner {
         for(uint256 i=0; i < tokenIdList.length; i++) {
             require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.ready, "Your token is not ready yet");
             ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.deployed;
@@ -277,7 +277,7 @@ contract ProductNft is ERC1155, IERC2981, Ownable {
 
     /**
     * @dev  Information about the royalty is returned when provided with token id and sale price. 
-    *       Royalty information depends on token Id: if token d is smaller than 12 than the artist address is given.
+    *       Royalty information depends on token id: if token id is smaller than 12 than the artist address is given.
     *       If token id is bigger than 12 than the funds will be sent to the contract that distributes royalties.
     * @param _tokenId is the tokenId of an NFT that has been sold on the NFT marketplace
     * @param _salePrice is the price of the sale of the given token id

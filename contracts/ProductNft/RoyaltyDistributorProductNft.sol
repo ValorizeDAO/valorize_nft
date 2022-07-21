@@ -1,6 +1,6 @@
 
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.15;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -12,20 +12,26 @@ contract RoyaltyDistributorProductNft is Ownable {
   address payable valorizeAddress;
 
   constructor(
-    address payable _artistAddress,
-    address payable _valorizeAddress  
+    address payable _valorizeAddress, 
+    address payable _artistAddress
   ) {
-    artistAddress = _artistAddress;
     valorizeAddress = _valorizeAddress;
+    artistAddress = _artistAddress;
   }
-  function balanceOf() public view returns(uint256) { 
+  
+  function balanceOfContract() public view returns(uint256) { 
     return address(this).balance;
   }
+  
+  function receiveRoyalties() external payable {}
 
-  function royaltyTransfer() external virtual payable onlyOwner{
-      uint256 royaltyAmount = (balanceOf() / 2);
-      artistAddress.transfer(royaltyAmount);
-      valorizeAddress.transfer(royaltyAmount);
-      emit royaltiesDistributed(artistAddress, valorizeAddress, royaltyAmount);
+  function _setRoyaltyAmount(uint256 amount) internal pure returns (uint256 royaltyAmount) {
+    royaltyAmount = (amount / 2);
+  }
+
+  function royaltyTransfer(uint256 amount) external onlyOwner {
+      artistAddress.transfer(_setRoyaltyAmount(amount));
+      valorizeAddress.transfer(_setRoyaltyAmount(amount));
+      emit royaltiesDistributed(artistAddress, valorizeAddress, _setRoyaltyAmount(amount));
   }
 }

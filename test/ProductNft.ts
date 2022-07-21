@@ -15,6 +15,8 @@ const BASE_URI = "https://token-cdn-domain/";
 const START_RARER = 12;
 const START_RARE = 1012;
 const TOTAL_AMOUNT = 2012;
+// const ROYALTY_CONTRACT_ADDRESS = addresses[0].getAddress();
+// const ARTIST_ADDRESS = ethers.utils.getAddress(ethers.addresses[1]);
 
 describe("ProductNft", () => {
   let productNft: ExposedProductNft,
@@ -26,7 +28,8 @@ describe("ProductNft", () => {
 
   const setupProductNft = async () => {
     [deployer, admin1, admin2, vault, ...addresses] = await ethers.getSigners();
-    productNft = await new ExposedProductNftFactory(deployer).deploy(BASE_URI, START_RARER, START_RARE, TOTAL_AMOUNT);
+    productNft = await new ExposedProductNftFactory(deployer).deploy(BASE_URI, 
+      await addresses[0].getAddress(), await addresses[1].getAddress(), START_RARER, START_RARE, TOTAL_AMOUNT);
     await productNft.deployed();
   };
 
@@ -199,8 +202,7 @@ describe("ProductNft", () => {
     });
 
     it("should fail if attempting to set a token that is not ready to status deployed", async() => {
-      //const tokenIdList = [14, 19, 201, 560, 788];
-      const tokenIdList = [1, 3, 5, 7, 8];
+      const tokenIdList = [14, 19, 201, 560, 788];
       await expect(productNft.connect(deployer).switchProductStatusToDeployed(tokenIdList)
       ).to.be.revertedWith("Your token is not ready yet");
     });
