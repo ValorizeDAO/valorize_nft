@@ -154,10 +154,55 @@ describe("ProductNft", () => {
       const tokenIdList = [1, 3, 5, 7, 8];
       const getTokenInfo = await productNft.emitTokenInfo(tokenIdList[1]);
       const getTokenURI = await productNft.URIS(tokenIdList[1]);
-      const rarity = await productNft.returnRarityByTokenId(tokenIdList[1])
+      const rarity = await productNft.returnRarityByTokenId(tokenIdList[1]);
+      const getProductStatus = await productNft.ProductStatusByTokenId(tokenIdList[1]);
       expect(getTokenInfo).to.emit(productNft, "returnTokenInfo").withArgs(
-        tokenIdList[1], rarity, getTokenURI
+        tokenIdList[1], rarity, getTokenURI, getProductStatus,
       );
+    });
+  });
+
+  describe("setting the product status of an array of token Ids", async () => {
+    beforeEach(setupProductNft)
+
+    it("sets the product status to ready for Mycelia and Silver NFTs", async() => {
+      const tokenIdList = [1, 3, 5, 7, 8];
+      const rarity = 2;
+      await productNft.initialProductStatusBasedOnRarity(tokenIdList[3], rarity);
+      const getProductStatus = await productNft.ProductStatusByTokenId(tokenIdList[3]);
+      const predictedProductStatus = 1;
+      expect(getProductStatus).to.equal(predictedProductStatus);
+    });
+
+    it("switches the product status of not_ready to ready", async() => {
+      const overridesRarest = {value: ethers.utils.parseEther("7.5")}
+      await productNft.rarerBatchMint(5, overridesRarest);
+      const tokenIdList = [13, 14, 15, 16, 17];
+      await productNft.connect(deployer).switchProductStatusToReady(tokenIdList);
+      const getProductStatus = await productNft.ProductStatusByTokenId(tokenIdList[3]);
+      expect(getProductStatus).to.equal(1);
+    });
+
+    it("switches the product status of ready to deployed", async() => {
+      const overridesRarest = {value: ethers.utils.parseEther("7.5")}
+      await productNft.rarestBatchMint(5, overridesRarest);
+      const tokenIdList = [1, 2, 3, 4, 5];
+      await productNft.connect(deployer).switchProductStatusToDeployed(tokenIdList);
+      const getProductStatus = await productNft.ProductStatusByTokenId(tokenIdList[2]);
+      expect(getProductStatus).to.equal(2);
+    });
+
+    it("should fail if a token already set to ready is set to ready again", async() => {
+      const tokenIdList = [1, 3, 5, 7, 8];
+      await expect(productNft.connect(deployer).switchProductStatusToReady(tokenIdList)
+      ).to.be.revertedWith("Product status is already set to ready");
+    });
+
+    it("should fail if attempting to set a token that is not ready to status deployed", async() => {
+      //const tokenIdList = [14, 19, 201, 560, 788];
+      const tokenIdList = [1, 3, 5, 7, 8];
+      await expect(productNft.connect(deployer).switchProductStatusToDeployed(tokenIdList)
+      ).to.be.revertedWith("Your token is not ready yet");
     });
   });
 });
