@@ -250,7 +250,7 @@ contract ProductNft is ERC1155, IERC2981, Ownable {
     */
     function switchProductStatusToReady(uint256[] memory tokenIdList) external onlyOwner {
         for(uint256 i=0; i < tokenIdList.length; i++) {
-            require(tokenIdList[i] > startRarerTokenIdIndex && tokenIdList[i] < startRareTokenIdIndex, "Product status is already set to ready");
+            require(tokenIdList[i] > startRarerTokenIdIndex && tokenIdList[i] < startRareTokenIdIndex, "Your token is not of the right type");
             require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.not_ready, "Invalid token status");
             ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.ready;
         }
