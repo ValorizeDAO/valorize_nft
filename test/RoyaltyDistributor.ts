@@ -24,7 +24,7 @@ describe.only("RoyaltyDistributor", () => {
   const setupProductNft = async () => {
     [deployer, admin1, admin2, vault, ...addresses] = await ethers.getSigners();
     productNft = await new RoyaltyDistributorFactory(deployer).deploy( 
-      await addresses[0].getAddress(), await addresses[1].getAddress());
+      [await addresses[0].getAddress(), await addresses[1].getAddress()]);
     await productNft.deployed();
   };
 
@@ -50,9 +50,9 @@ describe.only("RoyaltyDistributor", () => {
       await productNft.receiveRoyalties(override);
       const artistAddress = await addresses[0].getAddress();
       const balanceArtistBeforeRoyalty = await productNft.provider.getBalance(artistAddress);
-      await productNft.connect(deployer).royaltyTransfer(8);
+      await productNft.connect(deployer).royaltyTransfer();
       const balanceArtistAfterRoyalty = await productNft.provider.getBalance(artistAddress);
-      expect(balanceArtistAfterRoyalty).to.equal(balanceArtistBeforeRoyalty.add(4));
+      expect(balanceArtistAfterRoyalty).to.equal(balanceArtistBeforeRoyalty.add(ethers.utils.parseEther("4")));
     });
   });
 });
