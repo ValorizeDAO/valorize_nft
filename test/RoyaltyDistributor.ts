@@ -3,8 +3,8 @@ import { BigNumber, Contract, Signer } from "ethers";
 import chai from "chai";
 import { solidity } from "ethereum-waffle";
 import { getAddress } from "@ethersproject/address";
-import { RoyaltyDistributorProductNft } from "../typechain/RoyaltyDistributorProductNft";
-import { RoyaltyDistributorProductNftFactory } from "../typechain/RoyaltyDistributorProductNftFactory";
+import { RoyaltyDistributor } from "../typechain/RoyaltyDistributor";
+import { RoyaltyDistributorFactory } from "../typechain/RoyaltyDistributorFactory";
 import { string } from "hardhat/internal/core/params/argumentTypes";
 
 chai.use(solidity);
@@ -13,8 +13,8 @@ const { expect } = chai;
 
 const provider = ethers.getDefaultProvider();
 
-describe.only("RoyaltyDistributorProductNft", () => {
-  let productNft: RoyaltyDistributorProductNft,
+describe.only("RoyaltyDistributor", () => {
+  let productNft: RoyaltyDistributor,
     deployer: Signer,
     admin1: Signer,
     admin2: Signer,
@@ -23,7 +23,7 @@ describe.only("RoyaltyDistributorProductNft", () => {
 
   const setupProductNft = async () => {
     [deployer, admin1, admin2, vault, ...addresses] = await ethers.getSigners();
-    productNft = await new RoyaltyDistributorProductNftFactory(deployer).deploy( 
+    productNft = await new RoyaltyDistributorFactory(deployer).deploy( 
       await addresses[0].getAddress(), await addresses[1].getAddress());
     await productNft.deployed();
   };

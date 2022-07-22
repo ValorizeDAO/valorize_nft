@@ -249,10 +249,13 @@ contract ProductNft is ERC1155, IERC2981, Ownable {
     *       deployment status of a token launched using the Valorize Token Launcher
     */
     function switchProductStatusToReady(uint256[] memory tokenIdList) external onlyOwner {
-        for(uint256 i=0; i < tokenIdList.length; i++) {
+        for(uint256 i=0; i < tokenIdList.length;) {
             require(tokenIdList[i] > startRarerTokenIdIndex && tokenIdList[i] < startRareTokenIdIndex, "Your token is not of the right type");
             require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.not_ready, "Invalid token status");
             ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.ready;
+            unchecked {
+                i++;
+            }            
         }
     }
 
@@ -265,9 +268,12 @@ contract ProductNft is ERC1155, IERC2981, Ownable {
     *       deployment status of a token launched using the Valorize Token Launcher
     */
     function switchProductStatusToDeployed(uint256[] memory tokenIdList) external onlyOwner {
-        for(uint256 i=0; i < tokenIdList.length; i++) {
+        for(uint256 i=0; i < tokenIdList.length;) {
             require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.ready, "Your token is not ready yet");
             ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.deployed;
+            unchecked {
+                i++;
+            }
         }
     }
 
