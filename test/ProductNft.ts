@@ -15,8 +15,6 @@ const BASE_URI = "https://token-cdn-domain/";
 const START_RARER = 12;
 const START_RARE = 1012;
 const TOTAL_AMOUNT = 2012;
-// const ROYALTY_CONTRACT_ADDRESS = addresses[0].getAddress();
-// const ARTIST_ADDRESS = ethers.utils.getAddress(ethers.addresses[1]);
 
 describe("ProductNft", () => {
   let productNft: ExposedProductNft,
@@ -41,6 +39,45 @@ describe("ProductNft", () => {
     });
   })
 
+  describe("Returning the right amounts to be minted", async () => {
+    beforeEach(setupProductNft)
+
+    it("returns the same amount of tokens for minting as given", async () => {
+      await productNft.setTokensToMintPerType(12, "rarest");
+      const mintAmount = 10;
+      const rarestTokensLeft = await productNft.rarestTokensLeft();
+      expect(await productNft.mintAmountAdjustment(mintAmount, "rarest", rarestTokensLeft)
+      ).to.equal(mintAmount);
+    });
+
+    it("reduces amount of tokens if mint amount is higher than amount of tokens that are left", async () => {
+      await productNft.setTokensToMintPerType(15, "rarest");
+      const mintAmount = 14;
+      const maximumAmountOfRarestAvailable = START_RARER;
+      const rarestTokensLeft = await productNft.rarestTokensLeft();
+      expect(await productNft.mintAmountAdjustment(mintAmount, "rarest", rarestTokensLeft)).to.equal(maximumAmountOfRarestAvailable);
+    });  
+
+    it("reduces amount of tokens if given mint amount (function variable) is higher than amount minted per batch (slowMintable)", async () => {
+      const maxAmountOfNFTsForThisBatch = 10;
+      await productNft.setTokensToMintPerType(maxAmountOfNFTsForThisBatch, "rarer");
+      const mintAmount = 15;
+      const rareTokensLeft = await productNft.rareTokensLeft();
+      expect(await productNft.mintAmountAdjustment(mintAmount, "rarer", rareTokensLeft)).to.equal(maxAmountOfNFTsForThisBatch);
+    });
+    
+    it("emits the adjusted mint amount", async() => {
+      await productNft.setTokensToMintPerType(12, "rarest");
+      const mintAmount = 5;
+      const overridesRarest = {value: ethers.utils.parseEther("7.5")}
+      const rarestMint = await productNft.rarestBatchMint(mintAmount, overridesRarest);
+      const rarestTokensLeft = await productNft.rarestTokensLeft();
+      const adjustedAmount = await productNft.mintAmountAdjustment(mintAmount, "rarest", rarestTokensLeft);
+      expect(rarestMint).to.emit(productNft, "adjustedMintAmount"
+      ).withArgs(mintAmount, adjustedAmount);
+    });
+  });
+
   describe("Minting rarest, rarer and rare NFTs", async () => {
     beforeEach(setupProductNft)
 
@@ -49,9 +86,10 @@ describe("ProductNft", () => {
       await productNft.countBasedOnRarity(0);
       const tokenCountAfterIncrement = await productNft.rarestTokenIdCounter();
       expect(tokenCountAfterIncrement).to.equal(tokenCountBeforeIncrement.add(1));
-    })
+    });
 
     it("batch mints a rarest NFT", async () => {
+      await productNft.setTokensToMintPerType(START_RARER, "rarest");
       const overridesRarest = {value: ethers.utils.parseEther("7.5")}
       const tokenCountBeforeMint = await productNft.rarestTokenIdCounter();
       const mintAmount = 5;
@@ -61,22 +99,26 @@ describe("ProductNft", () => {
     });
 
     it("decreases the amount of tokens that are left after a rarest mint", async () => {
+      await productNft.setTokensToMintPerType(10, "rarest");
       const overridesRarest = {value: ethers.utils.parseEther("7.5")}
       const tokensLeftBeforeMint = ethers.BigNumber.from(await productNft.rarestTokensLeft());
       const mintAmount = 5;
       await productNft.rarestBatchMint(mintAmount, overridesRarest);
       const tokensLeftAfterMint = ethers.BigNumber.from(await productNft.rarestTokensLeft());
       expect(tokensLeftBeforeMint).to.equal(tokensLeftAfterMint.add(5));
-    }) 
+    }); 
 
     it("fails to batch mint rarest NFTs if sold out", async () => {
+      await productNft.setTokensToMintPerType(14, "rarest");
       const overridesRarest = {value: ethers.utils.parseEther("20")}
-      const mintAmount = 13;
+      await productNft.rarestBatchMint(12, overridesRarest);
+      const mintAmount = 3;
       await expect(productNft.rarestBatchMint(mintAmount, overridesRarest)
-      ).to.be.revertedWith("Mycelia NFTs are sold out");
+      ).to.be.revertedWith("This rarity is sold out");
     });
 
     it("reverts rarest batch mint when not enough Ether is sent", async () => {
+      await productNft.setTokensToMintPerType(START_RARER, "rarest");
       const overridesRarest = {value: ethers.utils.parseEther("5")}
       const mintAmount = 9;
       await expect(productNft.rarestBatchMint(mintAmount, overridesRarest)
@@ -84,13 +126,15 @@ describe("ProductNft", () => {
     });
 
     it("reverts rarest batch mint when the chosen amount is zero", async () => {
+      await productNft.setTokensToMintPerType(15, "rarest");
       const overridesRarest = {value: ethers.utils.parseEther("5")}
       const mintAmount = 0;
       await expect(productNft.rarestBatchMint(mintAmount, overridesRarest)
-      ).to.be.revertedWith("You need to mint atleast one NFT");
+      ).to.be.revertedWith("Mint atleast one NFT");
     });
 
     it("batch mints a rarer NFT", async () => {
+      await productNft.setTokensToMintPerType(10, "rarer");
       const overridesRarer = {value: ethers.utils.parseEther("6")}
       const tokenIdBeforeMint = await productNft.rarerTokenIdCounter();
       const mintAmount = 5;
@@ -100,6 +144,7 @@ describe("ProductNft", () => {
     });
 
     it("reverts rarer batch mint when not enough Ether is sent", async () => {
+      await productNft.setTokensToMintPerType(10, "rarer");
       const overridesRarer = {value: ethers.utils.parseEther("1")}
       const mintAmount = 4;
       await expect(productNft.rarerBatchMint(mintAmount, overridesRarer)
@@ -107,13 +152,15 @@ describe("ProductNft", () => {
     });
 
     it("reverts rarer batch mint when the chosen amount is zero", async () => {
+      await productNft.setTokensToMintPerType(10, "rarer");
       const overridesRarest = {value: ethers.utils.parseEther("5")}
       const mintAmount = 0;
       await expect(productNft.rarerBatchMint(mintAmount, overridesRarest)
-      ).to.be.revertedWith("You need to mint atleast one NFT");
+      ).to.be.revertedWith("Mint atleast one NFT");
     });
 
     it("batch mints a rare NFT", async () => {
+      await productNft.setTokensToMintPerType(10, "rare");
       const overridesRare = {value: ethers.utils.parseEther("5")}
       const tokenCountBeforeMint = await productNft.rareTokenIdCounter();
       const mintAmount = 10;
@@ -123,6 +170,7 @@ describe("ProductNft", () => {
     });
 
     it("reverts rare batch mint when not enough Ether is sent", async () => {
+      await productNft.setTokensToMintPerType(10, "rare");
       const overridesRarer = {value: ethers.utils.parseEther("1")}
       const mintAmount = 6;
       await expect(productNft.rareBatchMint(mintAmount, overridesRarer)
@@ -130,10 +178,11 @@ describe("ProductNft", () => {
     });
 
     it("reverts rare batch mint when the chosen amount is zero", async () => {
+      await productNft.setTokensToMintPerType(10, "rare");
       const overridesRarest = {value: ethers.utils.parseEther("5")}
       const mintAmount = 0;
       await expect(productNft.rareBatchMint(mintAmount, overridesRarest)
-      ).to.be.revertedWith("You need to mint atleast one NFT");
+      ).to.be.revertedWith("Mint atleast one NFT");
     });
   });
   
@@ -141,6 +190,7 @@ describe("ProductNft", () => {
     beforeEach(setupProductNft)
 
     it("sets the token URI for rarest mint", async() => {
+      await productNft.setTokensToMintPerType(12, "rarest");
       const overridesRarest = {value: ethers.utils.parseEther("1.5")}
       const amount = 1;
       await productNft.rarestBatchMint(amount, overridesRarest);
@@ -178,6 +228,7 @@ describe("ProductNft", () => {
     });
 
     it("switches the product status of not_ready to ready", async() => {
+      await productNft.setTokensToMintPerType(12, "rarer");
       const overridesRarest = {value: ethers.utils.parseEther("7.5")}
       await productNft.rarerBatchMint(5, overridesRarest);
       const tokenIdList = [13, 14, 15, 16, 17];
@@ -187,6 +238,7 @@ describe("ProductNft", () => {
     });
 
     it("switches the product status of ready to deployed", async() => {
+      await productNft.setTokensToMintPerType(12, "rarest");
       const overridesRarest = {value: ethers.utils.parseEther("7.5")}
       await productNft.rarestBatchMint(5, overridesRarest);
       const tokenIdList = [1, 2, 3, 4, 5];
@@ -196,12 +248,14 @@ describe("ProductNft", () => {
     });
 
     it("should fail if a token already set to ready is set to ready again", async() => {
+      await productNft.setTokensToMintPerType(12, "rarest");
       const tokenIdList = [1, 3, 5, 7, 8];
       await expect(productNft.connect(deployer).switchProductStatusToReady(tokenIdList)
-      ).to.be.revertedWith("Product status is already set to ready");
+      ).to.be.revertedWith("Your token is not of the right type");
     });
 
     it("should fail if attempting to set a token that is not ready to status deployed", async() => {
+      await productNft.setTokensToMintPerType(12, "rarest");
       const tokenIdList = [14, 19, 201, 560, 788];
       await expect(productNft.connect(deployer).switchProductStatusToDeployed(tokenIdList)
       ).to.be.revertedWith("Your token is not ready yet");

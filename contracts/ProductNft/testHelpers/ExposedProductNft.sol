@@ -27,11 +27,15 @@ contract ExposedProductNft is ProductNft {
         return super._countBasedOnRarity(rarity);
     }
 
-    function emitTokenInfo(uint256 _tokenId) public {
+    function emitTokenInfo(uint256 _tokenId) external {
         return _emitTokenInfo(_tokenId);
     }
 
-    function initialProductStatusBasedOnRarity(uint256 _tokenId, Rarity rarity) public {
+    function initialProductStatusBasedOnRarity(uint256 _tokenId, Rarity rarity) external {
         return _initialProductStatusBasedOnRarity(_tokenId, rarity);
     }
+
+    function mintAmountAdjustment(uint16 amount, string memory rarity, uint16 tokensLeft) external view returns (uint256) {
+        return _mintAmountAdjustment(amount, rarity, tokensLeft);
+    }         
 }

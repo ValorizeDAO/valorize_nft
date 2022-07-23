@@ -123,17 +123,14 @@ contract ProductNft is ERC1155, IERC2981, SlowMintable, Ownable {
         if(rarity == Rarity.rarest) {
             rarestTokenIdCounter.increment();
             tokenId = rarestTokenIdCounter.current();
-            require(tokenId <= startRarerTokenIdIndex, "Mycelia NFTs are sold out");
             return tokenId;   
         } else if (rarity == Rarity.rarer) {
             rarerTokenIdCounter.increment();
             tokenId = startRarerTokenIdIndex + rarerTokenIdCounter.current();
-            require(tokenId >= startRarerTokenIdIndex && tokenId <= startRareTokenIdIndex, "Diamond NFTS are sold out");
             return tokenId;
         } else if (rarity == Rarity.rare) {
             rareTokenIdCounter.increment();
             tokenId = startRareTokenIdIndex + rareTokenIdCounter.current();
-            require(tokenId <= totalAmountOfTokenIds, "Silver NFTs are sold out");
             return tokenId;
         }
     }
@@ -192,14 +189,29 @@ contract ProductNft is ERC1155, IERC2981, SlowMintable, Ownable {
     *       It will reduce the given amount based on the number of tokens left.
     *@param amountGiven: the amount that is given for batch minting.
     */
-    function _mintAmountAdjustment(uint16 amountGiven) internal view returns (uint16 reducedAmount) {
-        if (amountGiven > rarestTokensLeft) {
-            reducedAmount = rarestTokensLeft;
+    function _mintAmountAdjustment(uint16 amountGiven, string memory rarity, uint16 tokensLeft) internal view returns (uint16 reducedAmount) {
+        if (amountGiven > tokensLeft) {
+            reducedAmount = tokensLeft;
+            return reducedAmount;
+        } else if (amountGiven > tokensLeftToMintPerRarityPerBatch[rarity]) {
+            reducedAmount = tokensLeftToMintPerRarityPerBatch[rarity];
             return reducedAmount;
         } else {
             reducedAmount = amountGiven;
             return reducedAmount;
         }
+    }
+
+    /**
+    *@dev general requirements for minting functions.
+    *@param amount: the amount given for batch minting.
+    *@param price: the constant price to mint each NFT.
+    *@param tokensLeft: the number of tokens left per rarity.
+    */
+    function mintRequires(uint16 amount, uint256 price, uint256 tokensLeft) internal {
+        require(amount >= 1, "Mint atleast one NFT");
+        require(price * amount <= msg.value, "Ether value sent is not correct");
+        require(tokensLeft > 0, "This rarity is sold out");
     }
 
     /**
@@ -209,13 +221,15 @@ contract ProductNft is ERC1155, IERC2981, SlowMintable, Ownable {
     *       These tokenIds are associated with the Mycelia rarity. 
     *       This function can be called for 1.5 ETH.
     */
-    function rarestBatchMint(uint16 amount) public payable slowMintStatus(slowMintType.rarest) {
-        require(PRICE_PER_RAREST_TOKEN * amount <= msg.value, "Ether value sent is not correct");
-        require(amount >= 1, "You need to mint atleast one NFT");
-        _mintAmountAdjustment(amount);
-        emit adjustedMintAmount(amount, _mintAmountAdjustment(amount)); 
-        _mintBatch(msg.sender, _turnTokenIdsIntoArray(Rarity.rarest, _mintAmountAdjustment(amount)), _turnAmountIntoArray(_mintAmountAdjustment(amount)), '');
-        _reducesTokensLeft(_mintAmountAdjustment(amount), Rarity.rarest);
+    function rarestBatchMint(uint16 amount) public payable slowMintStatus("rarest") {
+        mintRequires(amount, PRICE_PER_RAREST_TOKEN, rarestTokensLeft);
+        emit adjustedMintAmount(amount, _mintAmountAdjustment(amount, "rarest", rarestTokensLeft)); 
+        
+        _mintBatch(msg.sender, 
+            _turnTokenIdsIntoArray(Rarity.rarest, _mintAmountAdjustment(amount, "rarest", rarestTokensLeft)), 
+            _turnAmountIntoArray(_mintAmountAdjustment(amount, "rarest", rarestTokensLeft)), '');
+
+        _reducesTokensLeft(_mintAmountAdjustment(amount, "rarest", rarestTokensLeft), Rarity.rarest);
     }
 
     /**
@@ -225,13 +239,15 @@ contract ProductNft is ERC1155, IERC2981, SlowMintable, Ownable {
     *       These tokenIds are associated with the Diamond rarity. 
     *       This function can be called for 0.55 ETH.
     */
-    function rarerBatchMint(uint16 amount) public payable slowMintStatus(slowMintType.rarer) {
-        require(PRICE_PER_RARER_TOKEN * amount <= msg.value, "Ether value sent is not correct");
-        require(amount >= 1, "You need to mint atleast one NFT");
-        _mintAmountAdjustment(amount);
-        emit adjustedMintAmount(amount, _mintAmountAdjustment(amount));    
-        _mintBatch(msg.sender, _turnTokenIdsIntoArray(Rarity.rarer, _mintAmountAdjustment(amount)), _turnAmountIntoArray(_mintAmountAdjustment(amount)), '');
-        _reducesTokensLeft(_mintAmountAdjustment(amount), Rarity.rarer);
+    function rarerBatchMint(uint16 amount) public payable slowMintStatus("rarer") {
+        mintRequires(amount, PRICE_PER_RARER_TOKEN, rarerTokensLeft);
+        emit adjustedMintAmount(amount, _mintAmountAdjustment(amount, "rarer", rarerTokensLeft)); 
+
+        _mintBatch(msg.sender, 
+            _turnTokenIdsIntoArray(Rarity.rarer, _mintAmountAdjustment(amount, "rarer", rarerTokensLeft)), 
+            _turnAmountIntoArray(_mintAmountAdjustment(amount, "rarer", rarerTokensLeft)), '');
+
+        _reducesTokensLeft(_mintAmountAdjustment(amount, "rarer", rarerTokensLeft), Rarity.rarer);
     }
 
     /**
@@ -241,13 +257,15 @@ contract ProductNft is ERC1155, IERC2981, SlowMintable, Ownable {
     *       These tokenIds are associated with the Silver rarity. 
     *       This function can be called for 0.2 ETH.
     */
-    function rareBatchMint(uint16 amount) public payable slowMintStatus(slowMintType.rare) {
-        require(PRICE_PER_RARE_TOKEN * amount <= msg.value, "Ether value sent is not correct");
-        require(amount >= 1, "You need to mint atleast one NFT");
-        _mintAmountAdjustment(amount);
-        emit adjustedMintAmount(amount, _mintAmountAdjustment(amount));    
-        _mintBatch(msg.sender, _turnTokenIdsIntoArray(Rarity.rare, _mintAmountAdjustment(amount)), _turnAmountIntoArray(_mintAmountAdjustment(amount)), '');
-        _reducesTokensLeft(_mintAmountAdjustment(amount), Rarity.rare);
+    function rareBatchMint(uint16 amount) public payable slowMintStatus("rare") {
+        mintRequires(amount, PRICE_PER_RARE_TOKEN, rareTokensLeft);
+        emit adjustedMintAmount(amount, _mintAmountAdjustment(amount, "rare", rareTokensLeft));    
+        
+        _mintBatch(msg.sender, 
+            _turnTokenIdsIntoArray(Rarity.rare, _mintAmountAdjustment(amount, "rare", rareTokensLeft)), 
+            _turnAmountIntoArray(_mintAmountAdjustment(amount, "rare", rareTokensLeft)), '');
+        
+        _reducesTokensLeft(_mintAmountAdjustment(amount, "rare", rareTokensLeft), Rarity.rare);
     }
 
     /**
