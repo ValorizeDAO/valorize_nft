@@ -76,6 +76,13 @@ describe("ProductNft", () => {
       expect(rarestMint).to.emit(productNft, "adjustedMintAmount"
       ).withArgs(mintAmount, adjustedAmount);
     });
+
+    it("reverts when no token amount per batch mint is provided", async () => {
+      const mintAmount = 5;
+      const overridesRarest = {value: ethers.utils.parseEther("7.5")}
+      await expect(productNft.rarestBatchMint(mintAmount, overridesRarest)
+      ).to.be.revertedWith("Tokens are sold out for this batch");
+    });
   });
 
   describe("Minting rarest, rarer and rare NFTs", async () => {
