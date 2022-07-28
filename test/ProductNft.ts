@@ -16,7 +16,7 @@ const START_RARER = 12;
 const START_RARE = 1012;
 const TOTAL_AMOUNT = 2012;
 
-describe.only("ProductNft", () => {
+describe("ProductNft", () => {
   let productNft: ExposedProductNft,
     deployer: Signer,
     admin1: Signer,
