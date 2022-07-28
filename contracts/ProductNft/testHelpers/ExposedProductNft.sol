@@ -12,16 +12,17 @@ import "../ProductNft.sol";
 contract ExposedProductNft is ProductNft {
     constructor(string memory baseURI_,
     address _royaltyDistributorAddress,
-    address _addressProductNFTArtist, 
+    address _artistAddress, 
     uint16 _startRarerTokenIdIndex, 
     uint16 _startRareTokenIdIndex, 
     uint16 _totalAmountOfTokenIds) 
     ProductNft(baseURI_,
     _royaltyDistributorAddress,
-    _addressProductNFTArtist, 
+    _artistAddress, 
     _startRarerTokenIdIndex, 
     _startRareTokenIdIndex, 
     _totalAmountOfTokenIds) {}
+            
 
     function countBasedOnRarity(Rarity rarity) external returns (uint256) {
         return super._countBasedOnRarity(rarity);

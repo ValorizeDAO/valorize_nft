@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { BigNumber, Contract, Signer } from "ethers";
-import chai from "chai";
+import chai, { util } from "chai";
 import { solidity } from "ethereum-waffle";
 import { getAddress } from "@ethersproject/address";
 import { RoyaltyDistributor } from "../typechain/RoyaltyDistributor";
@@ -13,7 +13,7 @@ const { expect } = chai;
 
 const provider = ethers.getDefaultProvider();
 
-describe.only("RoyaltyDistributor", () => {
+describe("RoyaltyDistributor", () => {
   let productNft: RoyaltyDistributor,
     deployer: Signer,
     admin1: Signer,
@@ -24,7 +24,7 @@ describe.only("RoyaltyDistributor", () => {
   const setupProductNft = async () => {
     [deployer, admin1, admin2, vault, ...addresses] = await ethers.getSigners();
     productNft = await new RoyaltyDistributorFactory(deployer).deploy( 
-      [await addresses[0].getAddress(), await addresses[1].getAddress()]);
+      [await addresses[2].getAddress(), await addresses[3].getAddress()]);
     await productNft.deployed();
   };
 
@@ -36,7 +36,7 @@ describe.only("RoyaltyDistributor", () => {
     });
   });
 
-  describe("Minting rarest, rarer and rare NFTs", async () => {
+  describe("Distribution of royalties for an array of addresses", async () => {
     beforeEach(setupProductNft)
 
     it("receives royalties and updates the contract balance", async () => {
@@ -53,6 +53,27 @@ describe.only("RoyaltyDistributor", () => {
       await productNft.connect(deployer).royaltyTransfer();
       const balanceArtistAfterRoyalty = await productNft.provider.getBalance(artistAddress);
       expect(balanceArtistAfterRoyalty).to.equal(balanceArtistBeforeRoyalty.add(ethers.utils.parseEther("4")));
+    });
+
+    it("updates the royalty receiving address", async () => {
+      const addressOld = await addresses[0].getAddress();
+      const addressNew = await addresses[2].getAddress();
+      const updateRoyaltyReceiver = await productNft.connect(addresses[0]).updateRoyaltyReceiver(addressOld, addressNew);
+      expect(updateRoyaltyReceiver).to.emit(productNft, "addressChanged").withArgs(
+        addressOld, addressNew,
+      );
+    });
+
+    it("fails when the previousReceiver does not have a role", async () => {
+      const randomAddress = await addresses[5].getAddress();
+      const addressNew = await addresses[2].getAddress();
+      expect(productNft.updateRoyaltyReceiver(randomAddress, addressNew)
+      ).to.be.revertedWith("Incorrect address for previousReceiver");
+    });
+
+    it("fails when the role name cannot be retrieved", async () => {
+      const inquiredAddress = await addresses[5].getAddress();
+      expect(productNft.getRoleName(inquiredAddress)).to.be.revertedWith("Incorrect address");
     });
   });
 });
