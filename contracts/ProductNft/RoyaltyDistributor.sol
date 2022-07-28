@@ -1,18 +1,23 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract RoyaltyDistributor is Ownable {
+contract RoyaltyDistributor is AccessControl {
 
   event royaltiesDistributed(address royaltyReceivers, uint256 royaltyAmount);
+  event addressChanged(address previousReceiver, address newReceiver);
 
- address[] royaltyReceivers;
+  address[] private royaltyReceivers;
 
   constructor(
     address[] memory _royaltyReceivers 
   ) {
     royaltyReceivers = _royaltyReceivers;
+    for( uint256 i=0; i < royaltyReceivers.length; i++) {
+      _grantRole(keccak256(abi.encodePacked(i)), royaltyReceivers[i]);
+      _setRoleAdmin(keccak256(abi.encodePacked(i)), keccak256(abi.encodePacked(i)));
+    }
   }
   
   function balanceOfContract() public view returns(uint256) { 
@@ -21,14 +26,54 @@ contract RoyaltyDistributor is Ownable {
   
   function receiveRoyalties() external payable {}
 
-  function _setRoyaltyAmount(uint256 artistAmount) internal view returns (uint256 royaltyAmount) {
-    royaltyAmount = (balanceOfContract() / artistAmount);
+  /**
+  *@dev Using this function a role name is returned if the inquired 
+  *     address is present in the royaltyReceivers array
+  *@param inquired is the address used to find the role name
+  */
+  function getRoleName(address inquired) external view returns (bytes32) {
+    for(uint256 i=0; i < royaltyReceivers.length; i++) {
+      if(royaltyReceivers[i] == inquired) {
+        return keccak256(abi.encodePacked(i));
+      }
+    }
+    revert("Incorrect address");
   }
 
-  function royaltyTransfer() external onlyOwner {
+  /**
+  *@dev This function returns the royalty amount that is calculated by 
+  *     dividing the contract balance by the number of addresses in royaltyReceivers
+  */
+  function _calculateRoyaltyAmount() internal view returns (uint256 royaltyAmount) {
+    royaltyAmount = (balanceOfContract() / royaltyReceivers.length);
+  }
+
+  /**
+  *@dev This function distributes the royalties this contract received 
+  *     equally to all addresses in royaltyReceivers
+  */
+  function royaltyTransfer() external {
+    uint256 royaltyAmount = _calculateRoyaltyAmount();
     for( uint256 i=0; i < royaltyReceivers.length; i++) {
-      payable(royaltyReceivers[i]).transfer(_setRoyaltyAmount(royaltyReceivers.length));
-      emit royaltiesDistributed(royaltyReceivers[i], _setRoyaltyAmount(royaltyReceivers.length)); 
+      payable(royaltyReceivers[i]).transfer(royaltyAmount);
+      emit royaltiesDistributed(royaltyReceivers[i], royaltyAmount); 
     }
+  }
+
+  /**
+  *@dev This function updates the royalty receiving address
+  *@param previousReceiver is the address that was given a role before
+  *@param newReceiver is the new address that replaces the previous address
+  */
+  function updateRoyaltyReceiver(address previousReceiver, address newReceiver) external {
+    for(uint256 i=0; i < royaltyReceivers.length; i++) {
+      if(royaltyReceivers[i] == previousReceiver) {
+        require(hasRole(keccak256(abi.encodePacked(i)), msg.sender));
+        royaltyReceivers[i] = newReceiver;
+        emit addressChanged(previousReceiver, newReceiver);
+        return;
+      }
+    }
+    revert("Incorrect address for previousReceiver");
   }
 }

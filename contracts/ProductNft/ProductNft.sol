@@ -5,9 +5,13 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import { IERC2981, IERC165 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
+<<<<<<< HEAD
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/SlowMintable.sol";
 
+=======
+import "@openzeppelin/contracts/access/AccessControl.sol";
+>>>>>>> royalties
 
 /**
 @title ProductNft
@@ -16,7 +20,11 @@ import "./utils/SlowMintable.sol";
 *       Key information: the metadata should be ordered. The rarest NFTs should be the lowest tokenIds, then rarer and then rare NFTs.
 */
 
+<<<<<<< HEAD
 contract ProductNft is ERC1155, IERC2981, SlowMintable, Ownable {
+=======
+contract ProductNft is ERC1155, IERC2981, AccessControl {
+>>>>>>> royalties
     using Counters for Counters.Counter;
 
     uint16 public startRarerTokenIdIndex;
@@ -33,7 +41,8 @@ contract ProductNft is ERC1155, IERC2981, SlowMintable, Ownable {
     uint256 public constant PRICE_PER_RARE_TOKEN = 0.2 ether;
     string public baseURI;
     address royaltyDistributorAddress;
-    address addressProductNFTArtist;
+    address artistAddress;
+    bytes32 public constant ARTIST_ROLE = keccak256("ARTIST_ROLE");
 
     mapping(uint256 => ProductStatus) public ProductStatusByTokenId;
     mapping(uint => string) public URIS;
@@ -42,25 +51,30 @@ contract ProductNft is ERC1155, IERC2981, SlowMintable, Ownable {
     enum ProductStatus {not_ready, ready, deployed}
 
     event returnTokenInfo(uint256 tokenId, string rarity, string tokenURI, ProductStatus);
-    event adjustedMintAmount(uint256 amountGiven, uint256 amountReceived);
 
-  constructor( 
-    string memory baseURI_,
-    address _royaltyDistributorAddress,
-    address _addressProductNFTArtist,   
-    uint16 _startRarerTokenIdIndex,
-    uint16 _startRareTokenIdIndex,
-    uint16 _totalAmountOfTokenIds
-    ) ERC1155(baseURI_) {
-        baseURI = baseURI_;
-        royaltyDistributorAddress = _royaltyDistributorAddress;
-        addressProductNFTArtist = _addressProductNFTArtist;
-        startRarerTokenIdIndex = _startRarerTokenIdIndex;
-        startRareTokenIdIndex = _startRareTokenIdIndex;
-        totalAmountOfTokenIds = _totalAmountOfTokenIds;
-        rarestTokensLeft = _startRarerTokenIdIndex;
-        rarerTokensLeft = _startRareTokenIdIndex - _startRarerTokenIdIndex; 
-        rareTokensLeft = _totalAmountOfTokenIds - _startRareTokenIdIndex;
+    event adjustedMintAmount(uint256 amountGiven, uint256 amountReceived);
+    event addressChanged(address previousReceiver, address newReceiver);
+
+
+    constructor( 
+        string memory baseURI_,
+        address _royaltyDistributorAddress,
+        address _artistAddress,
+        uint16 _startRarerTokenIdIndex,
+        uint16 _startRareTokenIdIndex,
+        uint16 _totalAmountOfTokenIds
+        ) ERC1155(baseURI_) {
+            baseURI = baseURI_;
+            royaltyDistributorAddress = _royaltyDistributorAddress;
+            artistAddress = _artistAddress;
+            startRarerTokenIdIndex = _startRarerTokenIdIndex;
+            startRareTokenIdIndex = _startRareTokenIdIndex;
+            totalAmountOfTokenIds = _totalAmountOfTokenIds;
+            rarestTokensLeft = _startRarerTokenIdIndex;
+            rarerTokensLeft = _startRareTokenIdIndex - _startRarerTokenIdIndex; 
+            rareTokensLeft = _totalAmountOfTokenIds - _startRareTokenIdIndex;
+            _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+            _setupRole(ARTIST_ROLE, _artistAddress);
     }
 
     /**
@@ -291,7 +305,7 @@ contract ProductNft is ERC1155, IERC2981, SlowMintable, Ownable {
     *@param tokenIdList: the array of token Ids that is used to change the 
     *       deployment status of a token launched using the Valorize Token Launcher
     */
-    function switchProductStatusToReady(uint256[] memory tokenIdList) external onlyOwner {
+    function switchProductStatusToReady(uint256[] memory tokenIdList) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for(uint256 i=0; i < tokenIdList.length;) {
             require(tokenIdList[i] > startRarerTokenIdIndex && tokenIdList[i] < startRareTokenIdIndex, "Your token is not of the right type");
             require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.not_ready, "Invalid token status");
@@ -310,7 +324,7 @@ contract ProductNft is ERC1155, IERC2981, SlowMintable, Ownable {
     *@param tokenIdList: the array of token Ids that is used to change the 
     *       deployment status of a token launched using the Valorize Token Launcher
     */
-    function switchProductStatusToDeployed(uint256[] memory tokenIdList) external onlyOwner {
+    function switchProductStatusToDeployed(uint256[] memory tokenIdList) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for(uint256 i=0; i < tokenIdList.length;) {
             require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.ready, "Your token is not ready yet");
             ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.deployed;
@@ -320,8 +334,23 @@ contract ProductNft is ERC1155, IERC2981, SlowMintable, Ownable {
         }
     }
 
-    function supportsInterface(bytes4 interfaceId) public view override(ERC1155, IERC165) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view override(ERC1155, AccessControl, IERC165) returns (bool) {
         return interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    /**
+    *@dev This function updates the royalty receiving address
+    *@param previousReceiver is the address that was given a role before
+    *@param newReceiver is the new address that replaces the previous address
+    */
+    function updateRoyaltyReceiver(address previousReceiver, address newReceiver) external onlyRole(ARTIST_ROLE) {
+            if(artistAddress == previousReceiver) {
+                require(hasRole(ARTIST_ROLE, msg.sender));
+                artistAddress = newReceiver;
+                emit addressChanged(previousReceiver, newReceiver);
+                return;
+            }
+        revert("Incorrect address for previousReceiver");
     }
 
     /**
@@ -340,10 +369,9 @@ contract ProductNft is ERC1155, IERC2981, SlowMintable, Ownable {
     ) {
         royaltyAmount = (_salePrice / 100) * 10;
         if (_tokenId <= startRarerTokenIdIndex) {
-            return(addressProductNFTArtist, royaltyAmount);
+            return(artistAddress, royaltyAmount);
         } else {
             return(royaltyDistributorAddress, royaltyAmount); 
         }
-    }
-    
+    }    
 }

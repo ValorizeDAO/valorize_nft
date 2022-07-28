@@ -16,7 +16,7 @@ const START_RARER = 12;
 const START_RARE = 1012;
 const TOTAL_AMOUNT = 2012;
 
-describe("ProductNft", () => {
+describe.only("ProductNft", () => {
   let productNft: ExposedProductNft,
     deployer: Signer,
     admin1: Signer,
@@ -26,8 +26,14 @@ describe("ProductNft", () => {
 
   const setupProductNft = async () => {
     [deployer, admin1, admin2, vault, ...addresses] = await ethers.getSigners();
-    productNft = await new ExposedProductNftFactory(deployer).deploy(BASE_URI, 
-      await addresses[0].getAddress(), await addresses[1].getAddress(), START_RARER, START_RARE, TOTAL_AMOUNT);
+    productNft = await new ExposedProductNftFactory(deployer).deploy(
+      BASE_URI, 
+      await addresses[0].getAddress(), 
+      await addresses[1].getAddress(), 
+      START_RARER, 
+      START_RARE, 
+      TOTAL_AMOUNT
+      );
     await productNft.deployed();
   };
 
@@ -266,6 +272,42 @@ describe("ProductNft", () => {
       const tokenIdList = [14, 19, 201, 560, 788];
       await expect(productNft.connect(deployer).switchProductStatusToDeployed(tokenIdList)
       ).to.be.revertedWith("Your token is not ready yet");
+    });
+  });
+
+  describe("setting artist and amin roles and being able to update those addresses", async () => {
+    beforeEach(setupProductNft)
+
+    it("grants the admin and artist roles when the contract is deployed", async () => {
+      const adminRole = await productNft.DEFAULT_ADMIN_ROLE();
+      const artistRole = await productNft.ARTIST_ROLE();
+      expect(
+        await productNft.hasRole(adminRole, await deployer.getAddress())
+      ).to.equal(true);
+      expect(
+        await productNft.hasRole(artistRole, await addresses[1].getAddress())
+      ).to.equal(true);
+      expect(
+        await productNft.hasRole(artistRole, await addresses[5].getAddress())
+      ).to.equal(false);
+    });
+
+
+    it("updates the royalty receiving address of the artist", async () => {
+      const addressArtistOld = await addresses[1].getAddress();
+      const addressArtistNew = await addresses[2].getAddress();
+      const updateRoyaltyReceiver = await productNft.connect(addresses[1]).updateRoyaltyReceiver(addressArtistOld, addressArtistNew);
+      expect(updateRoyaltyReceiver).to.emit(productNft, "addressChanged").withArgs(
+        addressArtistOld, addressArtistNew,
+      );
+    });
+
+    it("fails when the previousReceiver does not have a role", async () => {
+      const randomAddress = await addresses[5].getAddress();
+      const addressNew = await addresses[2].getAddress();
+      expect(productNft.connect(addresses[0]).updateRoyaltyReceiver(randomAddress, addressNew)
+      ).to.be.revertedWith(
+        "AccessControl: account 0x15d34aaf54267db7d7c367839aaf71a00a2c6a65 is missing role 0x877a78dc988c0ec5f58453b44888a55eb39755c3d5ed8d8ea990912aa3ef29c6");
     });
   });
 });
