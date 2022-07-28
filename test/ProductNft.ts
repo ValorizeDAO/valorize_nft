@@ -264,7 +264,7 @@ describe.only("ProductNft", () => {
       await productNft.setTokensToMintPerType(12, "rarest");
       const tokenIdList = [1, 3, 5, 7, 8];
       await expect(productNft.connect(deployer).switchProductStatusToReady(tokenIdList)
-      ).to.be.revertedWith("Your token is not of the right type");
+      ).to.be.revertedWith("Wrong token type");
     });
 
     it("should fail if attempting to set a token that is not ready to status deployed", async() => {

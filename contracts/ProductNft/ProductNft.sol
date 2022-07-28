@@ -43,9 +43,8 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     enum ProductStatus {not_ready, ready, deployed}
 
     event returnTokenInfo(uint256 tokenId, string rarity, string tokenURI, ProductStatus);
-
-    event adjustedMintAmount(uint256 amountGiven, uint256 amountReceived);
     event addressChanged(address previousReceiver, address newReceiver);
+    // event adjustedMintAmount(uint256 amountGiven, uint256 amountReceived);
 
 
     constructor( 
@@ -229,7 +228,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     */
     function rarestBatchMint(uint16 amount) public payable slowMintStatus("rarest") {
         mintRequires(amount, PRICE_PER_RAREST_TOKEN, rarestTokensLeft);
-        emit adjustedMintAmount(amount, _mintAmountAdjustment(amount, "rarest", rarestTokensLeft)); 
+        // emit adjustedMintAmount(amount, _mintAmountAdjustment(amount, "rarest", rarestTokensLeft)); 
         
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rarest, _mintAmountAdjustment(amount, "rarest", rarestTokensLeft)), 
@@ -247,7 +246,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     */
     function rarerBatchMint(uint16 amount) public payable slowMintStatus("rarer") {
         mintRequires(amount, PRICE_PER_RARER_TOKEN, rarerTokensLeft);
-        emit adjustedMintAmount(amount, _mintAmountAdjustment(amount, "rarer", rarerTokensLeft)); 
+        // emit adjustedMintAmount(amount, _mintAmountAdjustment(amount, "rarer", rarerTokensLeft)); 
 
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rarer, _mintAmountAdjustment(amount, "rarer", rarerTokensLeft)), 
@@ -265,7 +264,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     */
     function rareBatchMint(uint16 amount) public payable slowMintStatus("rare") {
         mintRequires(amount, PRICE_PER_RARE_TOKEN, rareTokensLeft);
-        emit adjustedMintAmount(amount, _mintAmountAdjustment(amount, "rare", rareTokensLeft));    
+        // emit adjustedMintAmount(amount, _mintAmountAdjustment(amount, "rare", rareTokensLeft));    
         
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rare, _mintAmountAdjustment(amount, "rare", rareTokensLeft)), 
@@ -299,8 +298,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     */
     function switchProductStatusToReady(uint256[] memory tokenIdList) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for(uint256 i=0; i < tokenIdList.length;) {
-            require(tokenIdList[i] > startRarerTokenIdIndex && tokenIdList[i] < startRareTokenIdIndex, "Your token is not of the right type");
-            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.not_ready, "Invalid token status");
+            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.not_ready, "Wrong token type");
             ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.ready;
             unchecked {
                 i++;
@@ -318,7 +316,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     */
     function switchProductStatusToDeployed(uint256[] memory tokenIdList) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for(uint256 i=0; i < tokenIdList.length;) {
-            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.ready, "Your token is not ready yet");
+            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.ready, "Not ready yet");
             ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.deployed;
             unchecked {
                 i++;
@@ -342,7 +340,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
                 emit addressChanged(previousReceiver, newReceiver);
                 return;
             }
-        revert("Incorrect address for previousReceiver");
+        revert("Incorrect address");
     }
 
     /**
