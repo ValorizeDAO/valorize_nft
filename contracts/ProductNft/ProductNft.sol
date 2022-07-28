@@ -64,6 +64,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
             rareTokensLeft = _totalAmountOfTokenIds - _startRareTokenIdIndex;
             _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
             _setupRole(ARTIST_ROLE, _artistAddress);
+            _setRoleAdmin(ARTIST_ROLE, ARTIST_ROLE);
     }
 
     /**
