@@ -64,7 +64,6 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
             rareTokensLeft = _totalAmountOfTokenIds - _startRareTokenIdIndex;
             _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
             _setupRole(ARTIST_ROLE, _artistAddress);
-            _setRoleAdmin(ARTIST_ROLE, ARTIST_ROLE);
     }
 
     /**
@@ -138,7 +137,12 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
             return tokenId;
         }
     }
-
+    
+    /**
+    *@dev   This sets the initial product status, creates a URI and emits that info on mint
+    *@param tokenId the token Id that will be minted
+    *@param rarity The rarity of the token. Initial product status is set based on the rarity
+    */
     function _setAndEmitTokenInfo(uint256 tokenId, Rarity rarity) internal {
         _initialProductStatusBasedOnRarity(tokenId, rarity);
         URIS[tokenId] = _URI(tokenId);
