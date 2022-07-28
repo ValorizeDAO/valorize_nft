@@ -5,13 +5,9 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import { IERC2981, IERC165 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
-<<<<<<< HEAD
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/SlowMintable.sol";
-
-=======
 import "@openzeppelin/contracts/access/AccessControl.sol";
->>>>>>> royalties
+
 
 /**
 @title ProductNft
@@ -20,11 +16,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 *       Key information: the metadata should be ordered. The rarest NFTs should be the lowest tokenIds, then rarer and then rare NFTs.
 */
 
-<<<<<<< HEAD
-contract ProductNft is ERC1155, IERC2981, SlowMintable, Ownable {
-=======
-contract ProductNft is ERC1155, IERC2981, AccessControl {
->>>>>>> royalties
+contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     using Counters for Counters.Counter;
 
     uint16 public startRarerTokenIdIndex;
