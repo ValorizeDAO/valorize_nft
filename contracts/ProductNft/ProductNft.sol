@@ -4,7 +4,8 @@ pragma solidity ^0.8.15;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC2981, IERC165 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
 @title ProductNft
@@ -13,7 +14,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 *       Key information: the metadata should be ordered. The rarest NFTs should be the lowest tokenIds, then rarer and then rare NFTs.
 */
 
-contract ProductNft is ERC1155, Ownable {
+contract ProductNft is ERC1155, IERC2981, AccessControl {
     using Counters for Counters.Counter;
 
     uint16 public startRarerTokenIdIndex;
@@ -29,6 +30,9 @@ contract ProductNft is ERC1155, Ownable {
     uint256 public constant PRICE_PER_RARER_TOKEN = 0.55 ether;
     uint256 public constant PRICE_PER_RARE_TOKEN = 0.2 ether;
     string public baseURI;
+    address royaltyDistributorAddress;
+    address artistAddress;
+    bytes32 public constant ARTIST_ROLE = keccak256("ARTIST_ROLE");
 
     mapping(uint256 => ProductStatus) public ProductStatusByTokenId;
     mapping(uint => string) public URIS;
@@ -37,20 +41,28 @@ contract ProductNft is ERC1155, Ownable {
     enum Rarity {rarest, rarer, rare} 
 
     event returnTokenInfo(uint256 tokenId, string rarity, string tokenURI, ProductStatus);
+    event addressChanged(address previousReceiver, address newReceiver);
 
-  constructor( 
-    string memory baseURI_,   
-    uint16 _startRarerTokenIdIndex,
-    uint16 _startRareTokenIdIndex,
-    uint16 _totalAmountOfTokenIds
-    ) ERC1155(baseURI_) {
-        baseURI = baseURI_;
-        startRarerTokenIdIndex = _startRarerTokenIdIndex;
-        startRareTokenIdIndex = _startRareTokenIdIndex;
-        totalAmountOfTokenIds = _totalAmountOfTokenIds;
-        rarestTokensLeft = _startRarerTokenIdIndex;
-        rarerTokensLeft = _startRareTokenIdIndex - _startRarerTokenIdIndex; 
-        rareTokensLeft = _totalAmountOfTokenIds - _startRareTokenIdIndex;
+    constructor( 
+        string memory baseURI_,
+        address _royaltyDistributorAddress,
+        address _artistAddress,
+        uint16 _startRarerTokenIdIndex,
+        uint16 _startRareTokenIdIndex,
+        uint16 _totalAmountOfTokenIds
+        ) ERC1155(baseURI_) {
+            baseURI = baseURI_;
+            royaltyDistributorAddress = _royaltyDistributorAddress;
+            artistAddress = _artistAddress;
+            startRarerTokenIdIndex = _startRarerTokenIdIndex;
+            startRareTokenIdIndex = _startRareTokenIdIndex;
+            totalAmountOfTokenIds = _totalAmountOfTokenIds;
+            rarestTokensLeft = _startRarerTokenIdIndex;
+            rarerTokensLeft = _startRareTokenIdIndex - _startRarerTokenIdIndex; 
+            rareTokensLeft = _totalAmountOfTokenIds - _startRareTokenIdIndex;
+            _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+            _setupRole(ARTIST_ROLE, _artistAddress);
+            _setRoleAdmin(ARTIST_ROLE, ARTIST_ROLE);
     }
 
     /**
@@ -241,11 +253,14 @@ contract ProductNft is ERC1155, Ownable {
     *@param tokenIdList: the array of token Ids that is used to change the 
     *       deployment status of a token launched using the Valorize Token Launcher
     */
-    function switchProductStatusToReady(uint256[] memory tokenIdList) public onlyOwner {
-        for(uint256 i=0; i < tokenIdList.length; i++) {
+    function switchProductStatusToReady(uint256[] memory tokenIdList) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for(uint256 i=0; i < tokenIdList.length;) {
             require(tokenIdList[i] > startRarerTokenIdIndex && tokenIdList[i] < startRareTokenIdIndex, "Your token is not of the right type");
             require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.not_ready, "Invalid token status");
             ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.ready;
+            unchecked {
+                i++;
+            }            
         }
     }
 
@@ -257,10 +272,54 @@ contract ProductNft is ERC1155, Ownable {
     *@param tokenIdList: the array of token Ids that is used to change the 
     *       deployment status of a token launched using the Valorize Token Launcher
     */
-    function switchProductStatusToDeployed(uint256[] memory tokenIdList) public onlyOwner {
-        for(uint256 i=0; i < tokenIdList.length; i++) {
+    function switchProductStatusToDeployed(uint256[] memory tokenIdList) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for(uint256 i=0; i < tokenIdList.length;) {
             require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.ready, "Your token is not ready yet");
             ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.deployed;
+            unchecked {
+                i++;
+            }
         }
     }
+
+    function supportsInterface(bytes4 interfaceId) public view override(ERC1155, AccessControl, IERC165) returns (bool) {
+        return interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    /**
+    *@dev This function updates the royalty receiving address
+    *@param previousReceiver is the address that was given a role before
+    *@param newReceiver is the new address that replaces the previous address
+    */
+    function updateRoyaltyReceiver(address previousReceiver, address newReceiver) external onlyRole(ARTIST_ROLE) {
+            if(artistAddress == previousReceiver) {
+                require(hasRole(ARTIST_ROLE, msg.sender));
+                artistAddress = newReceiver;
+                emit addressChanged(previousReceiver, newReceiver);
+                return;
+            }
+        revert("Incorrect address for previousReceiver");
+    }
+
+    /**
+    * @dev  Information about the royalty is returned when provided with token id and sale price. 
+    *       Royalty information depends on token id: if token id is smaller than 12 than the artist address is given.
+    *       If token id is bigger than 12 than the funds will be sent to the contract that distributes royalties.
+    * @param _tokenId is the tokenId of an NFT that has been sold on the NFT marketplace
+    * @param _salePrice is the price of the sale of the given token id
+    */
+    function royaltyInfo(
+        uint256 _tokenId,
+        uint256 _salePrice
+    ) external view override returns (
+        address,
+        uint256 royaltyAmount
+    ) {
+        royaltyAmount = (_salePrice / 100) * 10;
+        if (_tokenId <= startRarerTokenIdIndex) {
+            return(artistAddress, royaltyAmount);
+        } else {
+            return(royaltyDistributorAddress, royaltyAmount); 
+        }
+    }    
 }
