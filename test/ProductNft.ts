@@ -72,16 +72,16 @@ describe.only("ProductNft", () => {
       expect(await productNft.mintAmountAdjustment(mintAmount, "rarer", rareTokensLeft)).to.equal(maxAmountOfNFTsForThisBatch);
     });
     
-    it("emits the adjusted mint amount", async() => {
-      await productNft.setTokensToMintPerType(12, "rarest");
-      const mintAmount = 5;
-      const overridesRarest = {value: ethers.utils.parseEther("7.5")}
-      const rarestMint = await productNft.rarestBatchMint(mintAmount, overridesRarest);
-      const rarestTokensLeft = await productNft.rarestTokensLeft();
-      const adjustedAmount = await productNft.mintAmountAdjustment(mintAmount, "rarest", rarestTokensLeft);
-      expect(rarestMint).to.emit(productNft, "adjustedMintAmount"
-      ).withArgs(mintAmount, adjustedAmount);
-    });
+    // it("emits the adjusted mint amount", async() => {
+    //   await productNft.setTokensToMintPerType(12, "rarest");
+    //   const mintAmount = 5;
+    //   const overridesRarest = {value: ethers.utils.parseEther("7.5")}
+    //   const rarestMint = await productNft.rarestBatchMint(mintAmount, overridesRarest);
+    //   const rarestTokensLeft = await productNft.rarestTokensLeft();
+    //   const adjustedAmount = await productNft.mintAmountAdjustment(mintAmount, "rarest", rarestTokensLeft);
+    //   expect(rarestMint).to.emit(productNft, "adjustedMintAmount"
+    //   ).withArgs(mintAmount, adjustedAmount);
+    // });
 
     it("reverts when no token amount per batch mint is provided", async () => {
       const mintAmount = 5;
@@ -262,7 +262,9 @@ describe.only("ProductNft", () => {
 
     it("should fail if a token already set to ready is set to ready again", async() => {
       await productNft.setTokensToMintPerType(12, "rarest");
-      const tokenIdList = [1, 3, 5, 7, 8];
+      const overridesRarest = {value: ethers.utils.parseEther("7.5")}
+      await productNft.rarestBatchMint(5, overridesRarest);
+      const tokenIdList = [1, 2, 3, 4, 5];
       await expect(productNft.connect(deployer).switchProductStatusToReady(tokenIdList)
       ).to.be.revertedWith("Wrong token type");
     });
@@ -271,7 +273,7 @@ describe.only("ProductNft", () => {
       await productNft.setTokensToMintPerType(12, "rarest");
       const tokenIdList = [14, 19, 201, 560, 788];
       await expect(productNft.connect(deployer).switchProductStatusToDeployed(tokenIdList)
-      ).to.be.revertedWith("Your token is not ready yet");
+      ).to.be.revertedWith("Not ready yet");
     });
   });
 

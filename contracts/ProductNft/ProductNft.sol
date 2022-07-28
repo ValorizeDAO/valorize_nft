@@ -44,8 +44,6 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
 
     event returnTokenInfo(uint256 tokenId, string rarity, string tokenURI, ProductStatus);
     event addressChanged(address previousReceiver, address newReceiver);
-    // event adjustedMintAmount(uint256 amountGiven, uint256 amountReceived);
-
 
     constructor( 
         string memory baseURI_,
@@ -228,8 +226,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     */
     function rarestBatchMint(uint16 amount) public payable slowMintStatus("rarest") {
         mintRequires(amount, PRICE_PER_RAREST_TOKEN, rarestTokensLeft);
-        // emit adjustedMintAmount(amount, _mintAmountAdjustment(amount, "rarest", rarestTokensLeft)); 
-        
+
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rarest, _mintAmountAdjustment(amount, "rarest", rarestTokensLeft)), 
             _turnAmountIntoArray(_mintAmountAdjustment(amount, "rarest", rarestTokensLeft)), '');
@@ -246,7 +243,6 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     */
     function rarerBatchMint(uint16 amount) public payable slowMintStatus("rarer") {
         mintRequires(amount, PRICE_PER_RARER_TOKEN, rarerTokensLeft);
-        // emit adjustedMintAmount(amount, _mintAmountAdjustment(amount, "rarer", rarerTokensLeft)); 
 
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rarer, _mintAmountAdjustment(amount, "rarer", rarerTokensLeft)), 
@@ -263,8 +259,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     *       This function can be called for 0.2 ETH.
     */
     function rareBatchMint(uint16 amount) public payable slowMintStatus("rare") {
-        mintRequires(amount, PRICE_PER_RARE_TOKEN, rareTokensLeft);
-        // emit adjustedMintAmount(amount, _mintAmountAdjustment(amount, "rare", rareTokensLeft));    
+        mintRequires(amount, PRICE_PER_RARE_TOKEN, rareTokensLeft);    
         
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rare, _mintAmountAdjustment(amount, "rare", rareTokensLeft)), 
