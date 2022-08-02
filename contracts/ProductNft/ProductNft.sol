@@ -198,7 +198,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     *       It will reduce the given amount based on the number of tokens left.
     *@param amountGiven: the amount that is given for batch minting.
     */
-    function _mintAmountAdjustment(uint16 amountGiven, string memory rarity, uint16 tokensLeft) internal view returns (uint16 reducedAmount) {
+    function _permittedAmount(uint16 amountGiven, string memory rarity, uint16 tokensLeft) internal view returns (uint16 reducedAmount) {
         if (amountGiven > tokensLeft) {
             reducedAmount = tokensLeft;
             return reducedAmount;
@@ -234,10 +234,10 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
         mintRequires(amount, PRICE_PER_RAREST_TOKEN, rarestTokensLeft);
 
         _mintBatch(msg.sender, 
-            _turnTokenIdsIntoArray(Rarity.rarest, _mintAmountAdjustment(amount, "rarest", rarestTokensLeft)), 
-            _turnAmountIntoArray(_mintAmountAdjustment(amount, "rarest", rarestTokensLeft)), '');
+            _turnTokenIdsIntoArray(Rarity.rarest, _permittedAmount(amount, "rarest", rarestTokensLeft)), 
+            _turnAmountIntoArray(_permittedAmount(amount, "rarest", rarestTokensLeft)), '');
 
-        _reducesTokensLeft(_mintAmountAdjustment(amount, "rarest", rarestTokensLeft), Rarity.rarest);
+        _reducesTokensLeft(_permittedAmount(amount, "rarest", rarestTokensLeft), Rarity.rarest);
     }
 
     /**
@@ -251,10 +251,10 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
         mintRequires(amount, PRICE_PER_RARER_TOKEN, rarerTokensLeft);
 
         _mintBatch(msg.sender, 
-            _turnTokenIdsIntoArray(Rarity.rarer, _mintAmountAdjustment(amount, "rarer", rarerTokensLeft)), 
-            _turnAmountIntoArray(_mintAmountAdjustment(amount, "rarer", rarerTokensLeft)), '');
+            _turnTokenIdsIntoArray(Rarity.rarer, _permittedAmount(amount, "rarer", rarerTokensLeft)), 
+            _turnAmountIntoArray(_permittedAmount(amount, "rarer", rarerTokensLeft)), '');
 
-        _reducesTokensLeft(_mintAmountAdjustment(amount, "rarer", rarerTokensLeft), Rarity.rarer);
+        _reducesTokensLeft(_permittedAmount(amount, "rarer", rarerTokensLeft), Rarity.rarer);
     }
 
     /**
@@ -268,10 +268,10 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
         mintRequires(amount, PRICE_PER_RARE_TOKEN, rareTokensLeft);    
         
         _mintBatch(msg.sender, 
-            _turnTokenIdsIntoArray(Rarity.rare, _mintAmountAdjustment(amount, "rare", rareTokensLeft)), 
-            _turnAmountIntoArray(_mintAmountAdjustment(amount, "rare", rareTokensLeft)), '');
+            _turnTokenIdsIntoArray(Rarity.rare, _permittedAmount(amount, "rare", rareTokensLeft)), 
+            _turnAmountIntoArray(_permittedAmount(amount, "rare", rareTokensLeft)), '');
         
-        _reducesTokensLeft(_mintAmountAdjustment(amount, "rare", rareTokensLeft), Rarity.rare);
+        _reducesTokensLeft(_permittedAmount(amount, "rare", rareTokensLeft), Rarity.rare);
     }
 
     /**
@@ -343,6 +343,16 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
             }
         revert("Incorrect address");
     }
+
+    /**
+    *@dev This function sets the amount of tokenIds that can be minted per rarity
+    *@param amount given amount of tokenIds that can be minted
+    *@param rarity the rarity of the NFTs that will be minted
+    */
+    function setTokensToMintPerType(uint16 amount, string memory rarity) external onlyRole(DEFAULT_ADMIN_ROLE) returns (uint16) {
+        return super._setTokensToMintPerType(amount, rarity);
+    }   
+
 
     /**
     * @dev  Information about the royalty is returned when provided with token id and sale price. 

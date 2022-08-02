@@ -10,7 +10,7 @@ abstract contract SlowMintable {
         _;
     }
     
-    function setTokensToMintPerType(uint16 amount, string memory rarity) public returns (uint16) {
+    function _setTokensToMintPerType(uint16 amount, string memory rarity) internal returns (uint16) {
         tokensLeftToMintPerRarityPerBatch[rarity] = amount;
         return amount;
     }
