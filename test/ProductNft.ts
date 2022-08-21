@@ -223,7 +223,7 @@ describe("ProductNft", () => {
     });
   });
 
-  describe("withdrawal of ether", async () => {
+  describe("refund of Ether", async () => {
     beforeEach(setupProductNft)
 
     it("refunds if too much ETH is sent", async () => {
