@@ -56,11 +56,12 @@ describe("RoyaltyDistributor", () => {
     });
 
     it("updates the royalty receiving address", async () => {
-      const addressOld = await addresses[2].getAddress();
-      const addressNew = await addresses[4].getAddress();
-      const updateRoyaltyReceiver = await productNft.connect(addresses[2]).updateRoyaltyReceiver(addressOld, addressNew);
-      expect(updateRoyaltyReceiver).to.emit(productNft, "addressChanged").withArgs(
-        addressOld, addressNew,
+      const addressOld = await addresses[3].getAddress();
+      const addressNew = await addresses[7].getAddress();
+      const updateRoyaltyReceiver = await productNft.connect(addresses[3]
+        ).updateRoyaltyReceiver(addressOld, addressNew);
+      expect(updateRoyaltyReceiver).to.emit(productNft, "receiverUpdated").withArgs(
+        addressOld, addressNew
       );
     });
 

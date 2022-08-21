@@ -34,5 +34,5 @@ contract ExposedProductNft is ProductNft {
 
     function permittedAmount(uint16 amount, string memory rarity, uint16 tokensLeft) external view returns (uint256) {
         return _permittedAmount(amount, rarity, tokensLeft);
-    }     
+    }   
 }

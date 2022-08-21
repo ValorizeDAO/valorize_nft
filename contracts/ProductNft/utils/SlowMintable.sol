@@ -6,7 +6,7 @@ abstract contract SlowMintable {
     mapping(string => uint16) tokensLeftToMintPerRarityPerBatch;
 
     modifier slowMintStatus(string memory rarity) {
-        require(tokensLeftToMintPerRarityPerBatch[rarity] > 0, "Tokens are sold out for this batch");
+        require(tokensLeftToMintPerRarityPerBatch[rarity] > 0, "Batch sold out");
         _;
     }
     

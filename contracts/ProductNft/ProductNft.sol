@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import { IERC2981, IERC165 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import "./utils/SlowMintable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
 /**
@@ -15,13 +16,11 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 @dev    Implementation of a Valorize Product Non Fungible Token using ERC1155.
 *       Key information: the metadata should be ordered. The rarest NFTs should be the lowest tokenIds, then rarer and then rare NFTs.
 */
-
-contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
+contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMintable {
     using Counters for Counters.Counter;
 
-    uint16 public startRarerTokenIdIndex;
-    uint16 public startRareTokenIdIndex;
-    uint16 public totalAmountOfTokenIds;
+    uint16 public immutable startRarerTokenIdIndex;
+    uint16 public immutable startRareTokenIdIndex;
     uint16 public rarestTokensLeft;
     uint16 public rarerTokensLeft;
     uint16 public rareTokensLeft;
@@ -32,8 +31,8 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     uint256 public constant PRICE_PER_RARER_TOKEN = 0.55 ether;
     uint256 public constant PRICE_PER_RARE_TOKEN = 0.2 ether;
     string public baseURI;
-    address royaltyDistributorAddress;
-    address artistAddress;
+    address public royaltyDistributorAddress;
+    address public artistAddress;
     bytes32 public constant ARTIST_ROLE = keccak256("ARTIST_ROLE");
 
     mapping(uint256 => ProductStatus) public ProductStatusByTokenId;
@@ -43,7 +42,6 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     enum ProductStatus {not_ready, ready, deployed}
 
     event returnTokenInfo(uint256 tokenId, string rarity, string tokenURI, ProductStatus);
-    event addressChanged(address previousReceiver, address newReceiver);
 
     constructor( 
         string memory baseURI_,
@@ -58,7 +56,6 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
             artistAddress = _artistAddress;
             startRarerTokenIdIndex = _startRarerTokenIdIndex;
             startRareTokenIdIndex = _startRareTokenIdIndex;
-            totalAmountOfTokenIds = _totalAmountOfTokenIds;
             rarestTokensLeft = _startRarerTokenIdIndex;
             rarerTokensLeft = _startRareTokenIdIndex - _startRarerTokenIdIndex; 
             rareTokensLeft = _totalAmountOfTokenIds - _startRareTokenIdIndex;
@@ -68,25 +65,16 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     }
 
     /**
-    * @dev  This function returns the token information 
-    *       This includes token id, rarity and URI
-    * @param _tokenId is the token Id of the NFT of interest
-    */
-    function _emitTokenInfo(uint256 _tokenId) internal {
-      emit returnTokenInfo(_tokenId, returnRarityByTokenId(_tokenId), URIS[_tokenId], ProductStatusByTokenId[_tokenId]);
-    }
-
-    /**
     * @dev  This function returns the token rarity
     * @param _tokenId is the token Id of the NFT of interest
     */
-    function returnRarityByTokenId(uint256 _tokenId) public view returns (string memory rarity) {
-        if(_tokenId < startRarerTokenIdIndex) {
-            return "Mycelia";
+    function returnRarityByTokenId(uint256 _tokenId) public view returns(string memory rarity) {
+        if(_tokenId <= startRarerTokenIdIndex) {
+            rarity = "Mycelia";
         } else if(_tokenId <= startRareTokenIdIndex && _tokenId > startRarerTokenIdIndex) {
-            return "Diamond";
-        } else if(_tokenId > startRareTokenIdIndex) {
-            return "Silver";
+            rarity = "Diamond";
+        } else if (_tokenId > startRareTokenIdIndex) {
+            rarity = "Silver";
         }
     }
 
@@ -126,16 +114,13 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     function _countBasedOnRarity(Rarity rarity) internal returns (uint256 tokenId) {
         if(rarity == Rarity.rarest) {
             rarestTokenIdCounter.increment();
-            tokenId = rarestTokenIdCounter.current();
-            return tokenId;   
+            tokenId = rarestTokenIdCounter.current(); 
         } else if (rarity == Rarity.rarer) {
             rarerTokenIdCounter.increment();
             tokenId = startRarerTokenIdIndex + rarerTokenIdCounter.current();
-            return tokenId;
         } else if (rarity == Rarity.rare) {
             rareTokenIdCounter.increment();
             tokenId = startRareTokenIdIndex + rareTokenIdCounter.current();
-            return tokenId;
         }
     }
     
@@ -147,7 +132,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     function _setAndEmitTokenInfo(uint256 tokenId, Rarity rarity) internal {
         _initialProductStatusBasedOnRarity(tokenId, rarity);
         URIS[tokenId] = _URI(tokenId);
-        _emitTokenInfo(tokenId);
+        emit returnTokenInfo(tokenId, returnRarityByTokenId(tokenId), URIS[tokenId], ProductStatusByTokenId[tokenId]);
     }
 
     /**
@@ -183,7 +168,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
                 rarestTokensLeft--;
             } else if (rarity == Rarity.rarer) {
                 rarerTokensLeft--;
-            } else if (rarity == Rarity.rare) {
+            } else {
                 rareTokensLeft--;
             }
             unchecked {
@@ -201,38 +186,47 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     function _permittedAmount(uint16 amountGiven, string memory rarity, uint16 tokensLeft) internal view returns (uint16 reducedAmount) {
         if (amountGiven > tokensLeft) {
             reducedAmount = tokensLeft;
-            return reducedAmount;
         } else if (amountGiven > tokensLeftToMintPerRarityPerBatch[rarity]) {
             reducedAmount = tokensLeftToMintPerRarityPerBatch[rarity];
-            return reducedAmount;
         } else {
             reducedAmount = amountGiven;
-            return reducedAmount;
         }
     }
 
     /**
-    *@dev general requirements for minting functions.
-    *@param amount: the amount given for batch minting.
-    *@param price: the constant price to mint each NFT.
-    *@param tokensLeft: the number of tokens left per rarity.
+    *@dev   general requirements for minting functions and refunds 
+    *       if value send is higher than price * amount
+    *@param amount the amount given for batch minting.
+    *@param price the constant price to mint each NFT.
+    *@param tokensLeft the number of tokens left per rarity.
     */
-    function mintRequires(uint16 amount, uint256 price, uint256 tokensLeft) internal {
-        require(amount >= 1, "Mint atleast one NFT");
-        require(price * amount <= msg.value, "Ether value sent is not correct");
-        require(tokensLeft > 0, "This rarity is sold out");
+    function _mintRequiresAndRefund(uint16 amount, uint256 price, uint256 tokensLeft) internal {
+        require(amount >= 1);
+        require(tokensLeft > 0);
+        require(msg.value >= price * amount, "More ETH");
+        if (msg.value > price * amount) {
+            payable(msg.sender).transfer(msg.value - (price * amount));
+        }
+    }
+    
+    /**
+    *@dev   sends ether stored in the contract to admin.
+    */
+    function withdrawEther() external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        (bool success, ) = msg.sender.call{value: address(this).balance}("");
+        require(success);
     }
 
     /**
     *@dev   This minting function allows the minting of Rarest tokenIds.
-    *@param amount: Every call will recursively increment the tokenId 
+    *@param amount Every call will recursively increment the tokenId 
     *       depending on the amount of tokens the user wants to batch mint.
     *       These tokenIds are associated with the Mycelia rarity. 
     *       This function can be called for 1.5 ETH.
     */
     function rarestBatchMint(uint16 amount) public payable slowMintStatus("rarest") {
-        mintRequires(amount, PRICE_PER_RAREST_TOKEN, rarestTokensLeft);
-
+        _mintRequiresAndRefund(amount, PRICE_PER_RAREST_TOKEN, rarestTokensLeft);
+        
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rarest, _permittedAmount(amount, "rarest", rarestTokensLeft)), 
             _turnAmountIntoArray(_permittedAmount(amount, "rarest", rarestTokensLeft)), '');
@@ -242,14 +236,14 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
 
     /**
     *@dev   This minting function allows the minting of Rarer tokenIds.
-    *@param amount: Every call will recursively increment the tokenId 
+    *@param amount Every call will recursively increment the tokenId 
     *       depending on the amount of tokens the user wants to batch mint.
     *       These tokenIds are associated with the Diamond rarity. 
     *       This function can be called for 0.55 ETH.
     */
     function rarerBatchMint(uint16 amount) public payable slowMintStatus("rarer") {
-        mintRequires(amount, PRICE_PER_RARER_TOKEN, rarerTokensLeft);
-
+        _mintRequiresAndRefund(amount, PRICE_PER_RARER_TOKEN, rarerTokensLeft);
+        
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rarer, _permittedAmount(amount, "rarer", rarerTokensLeft)), 
             _turnAmountIntoArray(_permittedAmount(amount, "rarer", rarerTokensLeft)), '');
@@ -259,13 +253,13 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
 
     /**
     *@dev   This minting function allows the minting of Rare tokenIds.
-    *@param amount: Every call will recursively increment the tokenId 
+    *@param amount Every call will recursively increment the tokenId 
     *       depending on the amount of tokens the user wants to batch mint.
     *       These tokenIds are associated with the Silver rarity. 
     *       This function can be called for 0.2 ETH.
     */
     function rareBatchMint(uint16 amount) public payable slowMintStatus("rare") {
-        mintRequires(amount, PRICE_PER_RARE_TOKEN, rareTokensLeft);    
+        _mintRequiresAndRefund(amount, PRICE_PER_RARE_TOKEN, rareTokensLeft);    
         
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rare, _permittedAmount(amount, "rare", rareTokensLeft)), 
@@ -284,7 +278,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     function _initialProductStatusBasedOnRarity(uint256 tokenId, Rarity rarity) internal {
         if (rarity == Rarity.rarest || rarity == Rarity.rare) {
             ProductStatusByTokenId[tokenId] = ProductStatus.ready;
-        } else if (rarity == Rarity.rarer) {
+        } else {
             ProductStatusByTokenId[tokenId] = ProductStatus.not_ready;
         }
     }
@@ -294,12 +288,12 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     *       If the token has not been deployed and the product status is 
     *       not_ready the status will be set to ready.
     *       This can only be done for tokens of the Diamond/Rarer rarity.
-    *@param tokenIdList: the array of token Ids that is used to change the 
+    *@param tokenIdList is the array of token Ids that is used to change the 
     *       deployment status of a token launched using the Valorize Token Launcher
     */
     function switchProductStatusToReady(uint256[] memory tokenIdList) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for(uint256 i=0; i < tokenIdList.length;) {
-            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.not_ready, "Wrong token type");
+            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.not_ready, "Wrong type");
             ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.ready;
             unchecked {
                 i++;
@@ -312,12 +306,12 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     *       If the token has been deployed and the product status is 
     *       ready the status will be set to deployed.
     *       This can be done for all rarities.
-    *@param tokenIdList: the array of token Ids that is used to change the 
+    *@param tokenIdList is the array of token Ids that is used to change the 
     *       deployment status of a token launched using the Valorize Token Launcher
     */
     function switchProductStatusToDeployed(uint256[] memory tokenIdList) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for(uint256 i=0; i < tokenIdList.length;) {
-            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.ready, "Not ready yet");
+            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.ready, "Not ready");
             ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.deployed;
             unchecked {
                 i++;
@@ -330,18 +324,14 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, SlowMintable {
     }
 
     /**
-    *@dev This function updates the royalty receiving address
+    *@dev   This function updates the royalty receiving address
     *@param previousReceiver is the address that was given a role before
     *@param newReceiver is the new address that replaces the previous address
     */
     function updateRoyaltyReceiver(address previousReceiver, address newReceiver) external onlyRole(ARTIST_ROLE) {
-            if(artistAddress == previousReceiver) {
-                require(hasRole(ARTIST_ROLE, msg.sender));
-                artistAddress = newReceiver;
-                emit addressChanged(previousReceiver, newReceiver);
-                return;
-            }
-        revert("Incorrect address");
+        require(artistAddress == previousReceiver);
+        artistAddress = newReceiver;
+        grantRole(ARTIST_ROLE, newReceiver);
     }
 
     /**

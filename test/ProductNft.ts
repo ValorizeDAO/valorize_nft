@@ -9,6 +9,8 @@ import { string } from "hardhat/internal/core/params/argumentTypes";
 
 chai.use(solidity);
 
+
+
 const { expect } = chai;
 
 const BASE_URI = "https://token-cdn-domain/";
@@ -72,22 +74,12 @@ describe("ProductNft", () => {
       expect(await productNft.permittedAmount(mintAmount, "rarer", rareTokensLeft)).to.equal(maxAmountOfNFTsForThisBatch);
     });
     
-    // it("emits the adjusted mint amount", async() => {
-    //   await productNft.setTokensToMintPerType(12, "rarest");
-    //   const mintAmount = 5;
-    //   const overridesRarest = {value: ethers.utils.parseEther("7.5")}
-    //   const rarestMint = await productNft.rarestBatchMint(mintAmount, overridesRarest);
-    //   const rarestTokensLeft = await productNft.rarestTokensLeft();
-    //   const adjustedAmount = await productNft.permittedAmount(mintAmount, "rarest", rarestTokensLeft);
-    //   expect(rarestMint).to.emit(productNft, "adjustedMintAmount"
-    //   ).withArgs(mintAmount, adjustedAmount);
-    // });
 
     it("reverts when no token amount per batch mint is provided", async () => {
       const mintAmount = 5;
       const overridesRarest = {value: ethers.utils.parseEther("7.5")}
       await expect(productNft.rarestBatchMint(mintAmount, overridesRarest)
-      ).to.be.revertedWith("Tokens are sold out for this batch");
+      ).to.be.revertedWith("Batch sold out");
     });
   });
 
@@ -127,7 +119,7 @@ describe("ProductNft", () => {
       await productNft.rarestBatchMint(12, overridesRarest);
       const mintAmount = 3;
       await expect(productNft.rarestBatchMint(mintAmount, overridesRarest)
-      ).to.be.revertedWith("This rarity is sold out");
+      ).to.be.revertedWith("");
     });
 
     it("reverts rarest batch mint when not enough Ether is sent", async () => {
@@ -135,7 +127,7 @@ describe("ProductNft", () => {
       const overridesRarest = {value: ethers.utils.parseEther("5")}
       const mintAmount = 9;
       await expect(productNft.rarestBatchMint(mintAmount, overridesRarest)
-      ).to.be.revertedWith("Ether value sent is not correct");
+      ).to.be.revertedWith("More ETH");
     });
 
     it("reverts rarest batch mint when the chosen amount is zero", async () => {
@@ -143,7 +135,7 @@ describe("ProductNft", () => {
       const overridesRarest = {value: ethers.utils.parseEther("5")}
       const mintAmount = 0;
       await expect(productNft.rarestBatchMint(mintAmount, overridesRarest)
-      ).to.be.revertedWith("Mint atleast one NFT");
+      ).to.be.revertedWith("");
     });
 
     it("batch mints a rarer NFT", async () => {
@@ -161,7 +153,7 @@ describe("ProductNft", () => {
       const overridesRarer = {value: ethers.utils.parseEther("1")}
       const mintAmount = 4;
       await expect(productNft.rarerBatchMint(mintAmount, overridesRarer)
-      ).to.be.revertedWith("Ether value sent is not correct");
+      ).to.be.revertedWith("More ETH");
     });
 
     it("reverts rarer batch mint when the chosen amount is zero", async () => {
@@ -169,7 +161,7 @@ describe("ProductNft", () => {
       const overridesRarest = {value: ethers.utils.parseEther("5")}
       const mintAmount = 0;
       await expect(productNft.rarerBatchMint(mintAmount, overridesRarest)
-      ).to.be.revertedWith("Mint atleast one NFT");
+      ).to.be.revertedWith("");
     });
 
     it("batch mints a rare NFT", async () => {
@@ -187,7 +179,7 @@ describe("ProductNft", () => {
       const overridesRarer = {value: ethers.utils.parseEther("1")}
       const mintAmount = 6;
       await expect(productNft.rareBatchMint(mintAmount, overridesRarer)
-      ).to.be.revertedWith("Ether value sent is not correct");
+      ).to.be.revertedWith("More ETH");
     });
 
     it("reverts rare batch mint when the chosen amount is zero", async () => {
@@ -195,7 +187,7 @@ describe("ProductNft", () => {
       const overridesRarest = {value: ethers.utils.parseEther("5")}
       const mintAmount = 0;
       await expect(productNft.rareBatchMint(mintAmount, overridesRarest)
-      ).to.be.revertedWith("Mint atleast one NFT");
+      ).to.be.revertedWith("");
     });
   });
   
@@ -230,6 +222,37 @@ describe("ProductNft", () => {
       );
     });
   });
+
+  describe("withdrawal of ether", async () => {
+    beforeEach(setupProductNft)
+
+    it("refunds if too much ETH is sent", async () => {
+      await productNft.setTokensToMintPerType(10, "rarest");
+      const overridesRarest = {value: ethers.utils.parseEther("2.5")}
+      const mintAmount = 1;
+      const mint = await productNft.connect(addresses[0]).rarestBatchMint(mintAmount, overridesRarest);
+      const receipt = await mint.wait()
+      const gasSpent = receipt.gasUsed.mul(receipt.effectiveGasPrice) 
+      expect(await addresses[0].getBalance()).to.equal(ethers.utils.parseEther("9998.5").sub(gasSpent))
+    });
+  });
+
+
+  describe("withdrawal of ether", async () => {
+    beforeEach(setupProductNft)
+
+    it("withdraws ether stored in contract", async() => {
+      await productNft.setTokensToMintPerType(10, "rarest");
+      const overridesRarest = {value: ethers.utils.parseEther("7.5")}
+      const mintAmount = 5;
+      await productNft.rarestBatchMint(mintAmount, overridesRarest);
+      await productNft.connect(deployer).withdrawEther();
+      const provider = ethers.provider;
+      const balanceContract = await productNft.provider.getBalance(productNft.address);
+      expect(balanceContract).to.equal(ethers.utils.parseEther("0"));
+    });
+  });
+
 
   describe("setting the product status of an array of token Ids", async () => {
     beforeEach(setupProductNft)
@@ -269,14 +292,14 @@ describe("ProductNft", () => {
       await productNft.rarestBatchMint(5, overridesRarest);
       const tokenIdList = [1, 2, 3, 4, 5];
       await expect(productNft.connect(deployer).switchProductStatusToReady(tokenIdList)
-      ).to.be.revertedWith("Wrong token type");
+      ).to.be.revertedWith("Wrong type");
     });
 
     it("should fail if attempting to set a token that is not ready to status deployed", async() => {
       await productNft.setTokensToMintPerType(12, "rarest");
       const tokenIdList = [14, 19, 201, 560, 788];
       await expect(productNft.connect(deployer).switchProductStatusToDeployed(tokenIdList)
-      ).to.be.revertedWith("Not ready yet");
+      ).to.be.revertedWith("Not ready");
     });
   });
 
@@ -297,14 +320,12 @@ describe("ProductNft", () => {
       ).to.equal(false);
     });
 
-
     it("updates the royalty receiving address of the artist", async () => {
       const addressArtistOld = await addresses[1].getAddress();
       const addressArtistNew = await addresses[2].getAddress();
-      const updateRoyaltyReceiver = await productNft.connect(addresses[1]).updateRoyaltyReceiver(addressArtistOld, addressArtistNew);
-      expect(updateRoyaltyReceiver).to.emit(productNft, "addressChanged").withArgs(
-        addressArtistOld, addressArtistNew,
-      );
+      await productNft.connect(addresses[1]).updateRoyaltyReceiver(addressArtistOld, addressArtistNew);
+      const addressArtistCall = await productNft.artistAddress();
+      expect(addressArtistNew).to.equal(addressArtistCall);
     });
 
     it("fails when the previousReceiver does not have a role", async () => {
