@@ -223,21 +223,6 @@ describe("ProductNft", () => {
     });
   });
 
-  describe("refund of Ether", async () => {
-    beforeEach(setupProductNft)
-
-    it("refunds if too much ETH is sent", async () => {
-      await productNft.setTokensToMintPerType(10, "rarest");
-      const overridesRarest = {value: ethers.utils.parseEther("2.5")}
-      const mintAmount = 1;
-      const mint = await productNft.connect(addresses[0]).rarestBatchMint(mintAmount, overridesRarest);
-      const receipt = await mint.wait()
-      const gasSpent = receipt.gasUsed.mul(receipt.effectiveGasPrice) 
-      expect(await addresses[0].getBalance()).to.equal(ethers.utils.parseEther("9998.5").sub(gasSpent))
-    });
-  });
-
-
   describe("withdrawal of ether", async () => {
     beforeEach(setupProductNft)
 

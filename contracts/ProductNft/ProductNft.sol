@@ -200,13 +200,10 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     *@param price the constant price to mint each NFT.
     *@param tokensLeft the number of tokens left per rarity.
     */
-    function _mintRequiresAndRefund(uint16 amount, uint256 price, uint256 tokensLeft) internal {
+    function _mintRequires(uint16 amount, uint256 price, uint256 tokensLeft) internal {
         require(amount >= 1);
         require(tokensLeft > 0);
         require(msg.value >= price * amount, "More ETH");
-        if (msg.value > price * amount) {
-            payable(msg.sender).transfer(msg.value - (price * amount));
-        }
     }
     
     /**
@@ -225,7 +222,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     *       This function can be called for 1.5 ETH.
     */
     function rarestBatchMint(uint16 amount) public payable slowMintStatus("rarest") {
-        _mintRequiresAndRefund(amount, PRICE_PER_RAREST_TOKEN, rarestTokensLeft);
+        _mintRequires(amount, PRICE_PER_RAREST_TOKEN, rarestTokensLeft);
         
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rarest, _permittedAmount(amount, "rarest", rarestTokensLeft)), 
@@ -242,7 +239,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     *       This function can be called for 0.55 ETH.
     */
     function rarerBatchMint(uint16 amount) public payable slowMintStatus("rarer") {
-        _mintRequiresAndRefund(amount, PRICE_PER_RARER_TOKEN, rarerTokensLeft);
+        _mintRequires(amount, PRICE_PER_RARER_TOKEN, rarerTokensLeft);
         
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rarer, _permittedAmount(amount, "rarer", rarerTokensLeft)), 
@@ -259,7 +256,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     *       This function can be called for 0.2 ETH.
     */
     function rareBatchMint(uint16 amount) public payable slowMintStatus("rare") {
-        _mintRequiresAndRefund(amount, PRICE_PER_RARE_TOKEN, rareTokensLeft);    
+        _mintRequires(amount, PRICE_PER_RARE_TOKEN, rareTokensLeft);    
         
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rare, _permittedAmount(amount, "rare", rareTokensLeft)), 
