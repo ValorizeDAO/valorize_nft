@@ -30,18 +30,17 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     uint256 public constant PRICE_PER_RAREST_TOKEN = 1.5 ether;
     uint256 public constant PRICE_PER_RARER_TOKEN = 0.55 ether;
     uint256 public constant PRICE_PER_RARE_TOKEN = 0.2 ether;
-    string public baseURI;
+    bool internal frozen = false;
     address public royaltyDistributorAddress;
     address public artistAddress;
     bytes32 public constant ARTIST_ROLE = keccak256("ARTIST_ROLE");
 
     mapping(uint256 => ProductStatus) public ProductStatusByTokenId;
-    mapping(uint => string) public URIS;
   
     enum Rarity {rarest, rarer, rare}
     enum ProductStatus {not_ready, ready, deployed}
 
-    event returnTokenInfo(uint256 tokenId, string rarity, string tokenURI, ProductStatus);
+    event ReturnTokenInfo(uint256 tokenId, string rarity, ProductStatus);
 
     constructor( 
         string memory baseURI_,
@@ -51,7 +50,6 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
         uint16 _startRareTokenIdIndex,
         uint16 _totalAmountOfTokenIds
         ) ERC1155(baseURI_) {
-            baseURI = baseURI_;
             royaltyDistributorAddress = _royaltyDistributorAddress;
             artistAddress = _artistAddress;
             startRarerTokenIdIndex = _startRarerTokenIdIndex;
@@ -64,32 +62,31 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
             _setRoleAdmin(ARTIST_ROLE, ARTIST_ROLE);
     }
 
+    function freeze() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        frozen = true;
+    }
+
+    function setURI(string memory _baseURI) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(!frozen);
+        _setURI(_baseURI);
+    }
+
     /**
     * @dev  This function returns the token rarity
     * @param _tokenId is the token Id of the NFT of interest
     */
-    function returnRarityByTokenId(uint256 _tokenId) public view returns(string memory rarity) {
+    function returnRarityById(uint256 _tokenId) public view returns(string memory rarity) {
         if(_tokenId <= startRarerTokenIdIndex) {
             rarity = "Mycelia";
+
         } else if(_tokenId <= startRareTokenIdIndex && _tokenId > startRarerTokenIdIndex) {
             rarity = "Diamond";
+
         } else if (_tokenId > startRareTokenIdIndex) {
             rarity = "Silver";
         }
     }
 
-    /**
-    *@dev   This function allows the generation of a URI for a specific token Id: baseURI/tokenId.json 
-    *       if it does not exist already. If it does exist, that token URI will be returned.
-    *@param tokenId is the token Id to generate or return the URI for.     
-    */
-    function _URI(uint256 tokenId) public view returns (string memory) {
-      if(bytes(URIS[tokenId]).length != 0) {
-        return string(URIS[tokenId]);
-      }
-      return string(abi.encodePacked(baseURI, Strings.toString(tokenId), ".json"));
-    }
-    
     /**
     *@dev   Using this function, a given amount will be turned into an array.
     *       This array will be used in ERC1155's batch mint function. 
@@ -131,8 +128,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     */
     function _setAndEmitTokenInfo(uint256 tokenId, Rarity rarity) internal {
         _initialProductStatusBasedOnRarity(tokenId, rarity);
-        URIS[tokenId] = _URI(tokenId);
-        emit returnTokenInfo(tokenId, returnRarityByTokenId(tokenId), URIS[tokenId], ProductStatusByTokenId[tokenId]);
+        emit ReturnTokenInfo(tokenId, returnRarityById(tokenId), ProductStatusByTokenId[tokenId]);
     }
 
     /**
@@ -336,8 +332,8 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     *@param amount given amount of tokenIds that can be minted
     *@param rarity the rarity of the NFTs that will be minted
     */
-    function setTokensToMintPerType(uint16 amount, string memory rarity) external onlyRole(DEFAULT_ADMIN_ROLE) returns (uint16) {
-        return super._setTokensToMintPerType(amount, rarity);
+    function setTokensToMintPerRarity(uint16 amount, string memory rarity) external onlyRole(DEFAULT_ADMIN_ROLE) returns (uint16) {
+        return super._setTokensToMintPerRarity(amount, rarity);
     }   
 
 
