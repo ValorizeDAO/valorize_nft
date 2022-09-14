@@ -191,16 +191,41 @@ describe("ProductNft", () => {
     });
   });
   
-  // describe("setting the base URI and freeze it", async () => {
-  //   beforeEach(setupProductNft)
+  describe.only("setting the base URI and freeze it", async () => {
+    beforeEach(async function setupNftAndMintTokens() {
+      await setupProductNft()
+      await productNft.setTokensToMintPerRarity(10, "rare");
+      await productNft.setTokensToMintPerRarity(10, "rarer");
+      await productNft.setTokensToMintPerRarity(10, "rarest");
+      const mintAmount = 6;
+      await productNft.rareBatchMint(mintAmount, {value: ethers.utils.parseEther("1.2")})
+      const newBaseURI = "https://token-cdn-domainV2/";
+      await productNft.setURI(newBaseURI);
+    })
 
-  //   it("freezes the URI", async() => {
-  //     const newBaseURI = "https://token-cdn-domainV2/{id}";
-  //     await productNft.setURI(newBaseURI);
-  //     const returnUri = await productNft.uri();
-  //     expect()
-  //   });
-  // });
+    it("returns a uri with the route {id}/{tokenstatus}.json", async() => {
+      await productNft.rarerBatchMint(6, {value: ethers.utils.parseEther("3.3")})
+      await productNft.rarestBatchMint(6, {value: ethers.utils.parseEther("9")})
+      
+      let returnUri = await productNft.uri(1013);
+      expect(returnUri).to.eq('https://token-cdn-domainV2/1013/ready.json')
+      returnUri = await productNft.uri(1);
+      expect(returnUri).to.eq('https://token-cdn-domainV2/1/ready.json')
+      returnUri = await productNft.uri(13);
+      expect(returnUri).to.eq('https://token-cdn-domainV2/13/not-ready.json')
+    });
+
+    it("returns serves updated uri based on token status", async() => {
+      await productNft.switchProductStatusToRedeemed([1013, 1014, 1015])
+      const returnUri = await productNft.uri(1013);
+      expect(returnUri).to.eq('https://token-cdn-domainV2/1013/redeemed.json')
+    });
+
+    it("should show token in status 'not-ready' if token hasn't been minted", async() => {
+      const returnUri = await productNft.uri(2000);
+      expect(returnUri).to.eq('https://token-cdn-domainV2/2000/not-ready.json')
+    });
+  });
 
   describe("emit token Info by tokenId", async () => {
     beforeEach(setupProductNft)

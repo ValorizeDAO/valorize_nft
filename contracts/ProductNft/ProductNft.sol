@@ -72,6 +72,18 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     }
 
     /**
+    *@dev   This function allows the generation of a URI for a specific token Id: baseURI/tokenId.json 
+    *       if it does not exist already. If it does exist, that token URI will be returned.
+    *@param tokenId is the token Id to generate or return the URI for.     
+    */
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        string[3] memory nftStatuses = ["not-ready", "ready", "redeemed"];
+        string memory status = nftStatuses[uint256(ProductStatusByTokenId[tokenId])];
+        return string(abi.encodePacked(super.uri(tokenId), Strings.toString(tokenId), "/", status, ".json"));
+    }
+    
+
+    /**
     * @dev  This function returns the token rarity
     * @param _tokenId is the token Id of the NFT of interest
     */
