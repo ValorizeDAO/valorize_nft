@@ -257,12 +257,12 @@ describe("ProductNft", () => {
       expect(getProductStatus).to.equal(1);
     });
 
-    it("switches the product status of ready to deployed", async() => {
+    it("switches the product status of ready to redeemed", async() => {
       await productNft.setTokensToMintPerRarity(12, "rarest");
       const overridesRarest = {value: ethers.utils.parseEther("7.5")}
       await productNft.rarestBatchMint(5, overridesRarest);
       const tokenIdList = [1, 2, 3, 4, 5];
-      await productNft.connect(deployer).switchProductStatusToDeployed(tokenIdList);
+      await productNft.connect(deployer).switchProductStatusToRedeemed(tokenIdList);
       const getProductStatus = await productNft.ProductStatusByTokenId(tokenIdList[2]);
       expect(getProductStatus).to.equal(2);
     });
@@ -276,10 +276,10 @@ describe("ProductNft", () => {
       ).to.be.revertedWith("Wrong type");
     });
 
-    it("should fail if attempting to set a token that is not ready to status deployed", async() => {
+    it("should fail if attempting to set a token that is not ready to status redeemed", async() => {
       await productNft.setTokensToMintPerRarity(12, "rarest");
       const tokenIdList = [14, 19, 201, 560, 788];
-      await expect(productNft.connect(deployer).switchProductStatusToDeployed(tokenIdList)
+      await expect(productNft.connect(deployer).switchProductStatusToRedeemed(tokenIdList)
       ).to.be.revertedWith("Not ready");
     });
   });
@@ -287,7 +287,7 @@ describe("ProductNft", () => {
   describe("setting artist and amin roles and being able to update those addresses", async () => {
     beforeEach(setupProductNft)
 
-    it("grants the admin and artist roles when the contract is deployed", async () => {
+    it("grants the admin and artist roles when the contract is redeemed", async () => {
       const adminRole = await productNft.DEFAULT_ADMIN_ROLE();
       const artistRole = await productNft.ARTIST_ROLE();
       expect(
