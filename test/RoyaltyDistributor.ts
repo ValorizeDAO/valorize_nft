@@ -48,19 +48,20 @@ describe("RoyaltyDistributor", () => {
     it("distributes the royalties", async () => {
       const override = {value: ethers.utils.parseEther("8")}
       await productNft.receiveRoyalties(override);
-      const artistAddress = await addresses[0].getAddress();
+      const artistAddress = await addresses[2].getAddress();
       const balanceArtistBeforeRoyalty = await productNft.provider.getBalance(artistAddress);
-      await productNft.connect(deployer).royaltyTransfer();
+      await productNft.royaltyTransfer();
       const balanceArtistAfterRoyalty = await productNft.provider.getBalance(artistAddress);
       expect(balanceArtistAfterRoyalty).to.equal(balanceArtistBeforeRoyalty.add(ethers.utils.parseEther("4")));
     });
 
     it("updates the royalty receiving address", async () => {
-      const addressOld = await addresses[0].getAddress();
-      const addressNew = await addresses[2].getAddress();
-      const updateRoyaltyReceiver = await productNft.connect(addresses[0]).updateRoyaltyReceiver(addressOld, addressNew);
-      expect(updateRoyaltyReceiver).to.emit(productNft, "addressChanged").withArgs(
-        addressOld, addressNew,
+      const addressOld = await addresses[3].getAddress();
+      const addressNew = await addresses[7].getAddress();
+      const updateRoyaltyReceiver = await productNft.connect(addresses[3]
+        ).updateRoyaltyReceiver(addressOld, addressNew);
+      expect(updateRoyaltyReceiver).to.emit(productNft, "receiverUpdated").withArgs(
+        addressOld, addressNew
       );
     });
 

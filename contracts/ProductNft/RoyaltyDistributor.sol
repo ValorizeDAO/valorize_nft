@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 contract RoyaltyDistributor is AccessControl {
 
   event royaltiesDistributed(address royaltyReceivers, uint256 royaltyAmount);
-  event addressChanged(address previousReceiver, address newReceiver);
+  event receiverUpdated(address previousReceiver, address newReceiver);
 
-  address[] private royaltyReceivers;
+  address[] public royaltyReceivers;
 
   constructor(
     address[] memory _royaltyReceivers 
@@ -70,10 +70,10 @@ contract RoyaltyDistributor is AccessControl {
       if(royaltyReceivers[i] == previousReceiver) {
         require(hasRole(keccak256(abi.encodePacked(i)), msg.sender));
         royaltyReceivers[i] = newReceiver;
-        emit addressChanged(previousReceiver, newReceiver);
+        emit receiverUpdated(previousReceiver, newReceiver);
         return;
       }
     }
     revert("Incorrect address for previousReceiver");
-  }
+  }  
 }
