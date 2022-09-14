@@ -72,8 +72,8 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     }
 
     /**
-    *@dev   This function allows the generation of a URI for a specific token Id: baseURI/tokenId.json 
-    *       if it does not exist already. If it does exist, that token URI will be returned.
+    *@dev   This function allows the generation of a URI for a specific token Id with the format {baseUri}/{id}/{status}.json
+    *       the id in this case is a decimal string representation of the token Id
     *@param tokenId is the token Id to generate or return the URI for.     
     */
     function uri(uint256 tokenId) public view override returns (string memory) {
