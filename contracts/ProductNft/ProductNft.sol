@@ -38,7 +38,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     mapping(uint256 => ProductStatus) public ProductStatusByTokenId;
   
     enum Rarity {rarest, rarer, rare}
-    enum ProductStatus {not_ready, ready, deployed}
+    enum ProductStatus {not_ready, ready, redeemed}
 
     event ReturnTokenInfo(uint256 tokenId, string rarity, ProductStatus);
 
@@ -70,6 +70,18 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
         require(!frozen);
         _setURI(_baseURI);
     }
+
+    /**
+    *@dev   This function allows the generation of a URI for a specific token Id with the format {baseUri}/{id}/{status}.json
+    *       the id in this case is a decimal string representation of the token Id
+    *@param tokenId is the token Id to generate or return the URI for.     
+    */
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        string[3] memory nftStatuses = ["not-ready", "ready", "redeemed"];
+        string memory status = nftStatuses[uint256(ProductStatusByTokenId[tokenId])];
+        return string(abi.encodePacked(super.uri(tokenId), Strings.toString(tokenId), "/", status, ".json"));
+    }
+    
 
     /**
     * @dev  This function returns the token rarity
@@ -278,7 +290,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
 
     /**
     *@dev   This function will switch the status of product deployment to ready. 
-    *       If the token has not been deployed and the product status is 
+    *       If the token has not been redeemed and the product status is 
     *       not_ready the status will be set to ready.
     *       This can only be done for tokens of the Diamond/Rarer rarity.
     *@param tokenIdList is the array of token Ids that is used to change the 
@@ -295,17 +307,17 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     }
 
     /**
-    *@dev   This function will switch the status of product deployment to deployed. 
-    *       If the token has been deployed and the product status is 
-    *       ready the status will be set to deployed.
+    *@dev   This function will switch the status of product deployment to redeemed. 
+    *       If the token has been redeemed and the product status is 
+    *       ready the status will be set to redeemed.
     *       This can be done for all rarities.
     *@param tokenIdList is the array of token Ids that is used to change the 
     *       deployment status of a token launched using the Valorize Token Launcher
     */
-    function switchProductStatusToDeployed(uint256[] memory tokenIdList) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function switchProductStatusToRedeemed(uint256[] memory tokenIdList) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for(uint256 i=0; i < tokenIdList.length;) {
             require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.ready, "Not ready");
-            ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.deployed;
+            ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.redeemed;
             unchecked {
                 i++;
             }

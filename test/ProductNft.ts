@@ -191,16 +191,41 @@ describe("ProductNft", () => {
     });
   });
   
-  // describe("setting the base URI and freeze it", async () => {
-  //   beforeEach(setupProductNft)
+  describe.only("setting the base URI and freeze it", async () => {
+    beforeEach(async function setupNftAndMintTokens() {
+      await setupProductNft()
+      await productNft.setTokensToMintPerRarity(10, "rare");
+      await productNft.setTokensToMintPerRarity(10, "rarer");
+      await productNft.setTokensToMintPerRarity(10, "rarest");
+      const mintAmount = 6;
+      await productNft.rareBatchMint(mintAmount, {value: ethers.utils.parseEther("1.2")})
+      const newBaseURI = "https://token-cdn-domainV2/";
+      await productNft.setURI(newBaseURI);
+    })
 
-  //   it("freezes the URI", async() => {
-  //     const newBaseURI = "https://token-cdn-domainV2/{id}";
-  //     await productNft.setURI(newBaseURI);
-  //     const returnUri = await productNft.uri();
-  //     expect()
-  //   });
-  // });
+    it("returns a uri with the route {id}/{tokenstatus}.json", async() => {
+      await productNft.rarerBatchMint(6, {value: ethers.utils.parseEther("3.3")})
+      await productNft.rarestBatchMint(6, {value: ethers.utils.parseEther("9")})
+      
+      let returnUri = await productNft.uri(1013);
+      expect(returnUri).to.eq('https://token-cdn-domainV2/1013/ready.json')
+      returnUri = await productNft.uri(1);
+      expect(returnUri).to.eq('https://token-cdn-domainV2/1/ready.json')
+      returnUri = await productNft.uri(13);
+      expect(returnUri).to.eq('https://token-cdn-domainV2/13/not-ready.json')
+    });
+
+    it("returns serves updated uri based on token status", async() => {
+      await productNft.switchProductStatusToRedeemed([1013, 1014, 1015])
+      const returnUri = await productNft.uri(1013);
+      expect(returnUri).to.eq('https://token-cdn-domainV2/1013/redeemed.json')
+    });
+
+    it("should show token in status 'not-ready' if token hasn't been minted", async() => {
+      const returnUri = await productNft.uri(2000);
+      expect(returnUri).to.eq('https://token-cdn-domainV2/2000/not-ready.json')
+    });
+  });
 
   describe("emit token Info by tokenId", async () => {
     beforeEach(setupProductNft)
@@ -257,12 +282,12 @@ describe("ProductNft", () => {
       expect(getProductStatus).to.equal(1);
     });
 
-    it("switches the product status of ready to deployed", async() => {
+    it("switches the product status of ready to redeemed", async() => {
       await productNft.setTokensToMintPerRarity(12, "rarest");
       const overridesRarest = {value: ethers.utils.parseEther("7.5")}
       await productNft.rarestBatchMint(5, overridesRarest);
       const tokenIdList = [1, 2, 3, 4, 5];
-      await productNft.connect(deployer).switchProductStatusToDeployed(tokenIdList);
+      await productNft.connect(deployer).switchProductStatusToRedeemed(tokenIdList);
       const getProductStatus = await productNft.ProductStatusByTokenId(tokenIdList[2]);
       expect(getProductStatus).to.equal(2);
     });
@@ -276,10 +301,10 @@ describe("ProductNft", () => {
       ).to.be.revertedWith("Wrong type");
     });
 
-    it("should fail if attempting to set a token that is not ready to status deployed", async() => {
+    it("should fail if attempting to set a token that is not ready to status redeemed", async() => {
       await productNft.setTokensToMintPerRarity(12, "rarest");
       const tokenIdList = [14, 19, 201, 560, 788];
-      await expect(productNft.connect(deployer).switchProductStatusToDeployed(tokenIdList)
+      await expect(productNft.connect(deployer).switchProductStatusToRedeemed(tokenIdList)
       ).to.be.revertedWith("Not ready");
     });
   });
@@ -287,7 +312,7 @@ describe("ProductNft", () => {
   describe("setting artist and amin roles and being able to update those addresses", async () => {
     beforeEach(setupProductNft)
 
-    it("grants the admin and artist roles when the contract is deployed", async () => {
+    it("grants the admin and artist roles when the contract is redeemed", async () => {
       const adminRole = await productNft.DEFAULT_ADMIN_ROLE();
       const artistRole = await productNft.ARTIST_ROLE();
       expect(
