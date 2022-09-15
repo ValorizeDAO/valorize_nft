@@ -127,11 +127,11 @@ describe("ProductNft", () => {
       const overridesRarest = {value: ethers.utils.parseEther("5")}
       const mintAmount = 9;
       await expect(productNft.rarestBatchMint(mintAmount, overridesRarest)
-      ).to.be.revertedWith("More ETH");
+      ).to.be.revertedWith("Not enough ETH sent");
     });
 
     it("reverts rarest batch mint when the chosen amount is zero", async () => {
-      await productNft.setTokensToMintPerRarity(15, "rarest");
+      await productNft.setTokensToMintPerRarity(10, "rarest");
       const overridesRarest = {value: ethers.utils.parseEther("5")}
       const mintAmount = 0;
       await expect(productNft.rarestBatchMint(mintAmount, overridesRarest)
@@ -153,7 +153,7 @@ describe("ProductNft", () => {
       const overridesRarer = {value: ethers.utils.parseEther("1")}
       const mintAmount = 4;
       await expect(productNft.rarerBatchMint(mintAmount, overridesRarer)
-      ).to.be.revertedWith("More ETH");
+      ).to.be.revertedWith("Not enough ETH sent");
     });
 
     it("reverts rarer batch mint when the chosen amount is zero", async () => {
@@ -179,7 +179,7 @@ describe("ProductNft", () => {
       const overridesRarer = {value: ethers.utils.parseEther("1")}
       const mintAmount = 6;
       await expect(productNft.rareBatchMint(mintAmount, overridesRarer)
-      ).to.be.revertedWith("More ETH");
+      ).to.be.revertedWith("Not enough ETH sent");
     });
 
     it("reverts rare batch mint when the chosen amount is zero", async () => {
@@ -191,7 +191,7 @@ describe("ProductNft", () => {
     });
   });
   
-  describe.only("setting the base URI and freeze it", async () => {
+  describe("setting the token URI with token Id and product status", async () => {
     beforeEach(async function setupNftAndMintTokens() {
       await setupProductNft()
       await productNft.setTokensToMintPerRarity(10, "rare");
@@ -237,9 +237,8 @@ describe("ProductNft", () => {
       const mintFunction = await productNft.rarestBatchMint(mintAmount, overridesRarest);
       const tokenIdList = [1, 2, 3, 4, 5];
       const rarity = await productNft.returnRarityById(tokenIdList[1]);
-      const getProductStatus = await productNft.ProductStatusByTokenId(tokenIdList[1]);
-      expect(mintFunction).to.emit(productNft, "ReturnTokenInfo").withArgs(
-        tokenIdList[1], rarity, getProductStatus,
+      expect(mintFunction).to.emit(productNft, "MintedTokenInfo").withArgs(
+        tokenIdList[1], rarity, "ready",
       );
     });
   });

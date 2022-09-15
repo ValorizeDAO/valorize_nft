@@ -40,7 +40,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     enum Rarity {rarest, rarer, rare}
     enum ProductStatus {not_ready, ready, redeemed}
 
-    event ReturnTokenInfo(uint256 tokenId, string rarity, ProductStatus);
+    event MintedTokenInfo(uint256 tokenId, string rarity, string productStatus);
 
     constructor( 
         string memory baseURI_,
@@ -140,7 +140,9 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     */
     function _setAndEmitTokenInfo(uint256 tokenId, Rarity rarity) internal {
         _initialProductStatusBasedOnRarity(tokenId, rarity);
-        emit ReturnTokenInfo(tokenId, returnRarityById(tokenId), ProductStatusByTokenId[tokenId]);
+        string[3] memory nftStatuses = ["not-ready", "ready", "redeemed"];
+        string memory status = nftStatuses[uint256(ProductStatusByTokenId[tokenId])];
+        emit MintedTokenInfo(tokenId, returnRarityById(tokenId), status);
     }
 
     /**
@@ -209,9 +211,9 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     *@param tokensLeft the number of tokens left per rarity.
     */
     function _mintRequires(uint16 amount, uint256 price, uint256 tokensLeft) internal {
-        require(amount >= 1);
-        require(tokensLeft > 0);
-        require(msg.value >= price * amount, "More ETH");
+        require(amount > 0);
+        require(tokensLeft > 0, "This rarity is sold out");
+        require(msg.value >= price * amount, "Not enough ETH sent");
     }
     
     /**
