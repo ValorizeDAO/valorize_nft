@@ -10,3 +10,6 @@ build
 contracts/@*
 .env
 contracts-exposed
+product_nft_renders
+product_nft_metadata
+arguments.js
