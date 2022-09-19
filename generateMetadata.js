@@ -1,7 +1,7 @@
 
 const fs = require('fs');
 
-const BASE_URI = "ipfs://QmZvUgS3UfT6Zu3zBjuyvNCWLbCWKuZZ5BD3D4HSnJycn4";
+const BASE_URI = "https://product-nft-metadata.nyc3.digitaloceanspaces.com";
 for (let i = 1; i <= 3000; i++) {
     let rarity;
     if (i <= 12) {
