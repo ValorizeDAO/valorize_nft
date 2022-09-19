@@ -78,7 +78,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
         _setURI(_baseURI);
     }
 
-    function setTokenPrice() public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setTokenPrice() internal {
         PRICE_PER_RAREST_TOKEN = 1.5 ether;
         PRICE_PER_RARER_TOKEN = 0.5 ether;
         PRICE_PER_RARE_TOKEN = 0.1 ether;
@@ -250,7 +250,9 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rarest, _permittedAmount(amount, "rarest", rarestTokensLeft)), 
             _turnAmountIntoArray(_permittedAmount(amount, "rarest", rarestTokensLeft)), '');
+        
         _reducesTokensLeft(_permittedAmount(amount, "rarest", rarestTokensLeft), Rarity.rarest);
+        
         tokensLeftToMintPerRarityPerBatch["rarest"] = tokensLeftToMintPerRarityPerBatch["rarest"] - amount;
     }
 
@@ -259,7 +261,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     *@param amount Every call will recursively increment the tokenId 
     *       depending on the amount of tokens the user wants to batch mint.
     *       These tokenIds are associated with the Diamond rarity. 
-    *       This function can be called for 0.55 ETH.
+    *       This function can be called for 0.5 ETH.
     */
     function rarerBatchMint(uint16 amount) public payable slowMintStatus("rarer") {
         _mintRequires(amount, PRICE_PER_RARER_TOKEN, rarerTokensLeft);
@@ -267,7 +269,9 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rarer, _permittedAmount(amount, "rarer", rarerTokensLeft)), 
             _turnAmountIntoArray(_permittedAmount(amount, "rarer", rarerTokensLeft)), '');
+        
         _reducesTokensLeft(_permittedAmount(amount, "rarer", rarerTokensLeft), Rarity.rarer);
+        
         tokensLeftToMintPerRarityPerBatch["rarer"] = tokensLeftToMintPerRarityPerBatch["rarer"] - amount;
     }
 
@@ -284,7 +288,9 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rare, _permittedAmount(amount, "rare", rareTokensLeft)), 
             _turnAmountIntoArray(_permittedAmount(amount, "rare", rareTokensLeft)), '');
+        
         _reducesTokensLeft(_permittedAmount(amount, "rare", rareTokensLeft), Rarity.rare);
+        
         tokensLeftToMintPerRarityPerBatch["rare"] = tokensLeftToMintPerRarityPerBatch["rare"] - amount;
     }
 
