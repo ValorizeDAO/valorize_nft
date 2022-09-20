@@ -241,9 +241,9 @@ describe("ProductNft", () => {
       let returnUri = await productNft.uri(1013);
       expect(returnUri).to.eq('https://token-cdn-domain/1013/ready.json')
       returnUri = await productNft.uri(1);
-      expect(returnUri).to.eq('https://token-cdn-domain/1/not_ready.json')
+      expect(returnUri).to.eq('https://token-cdn-domain/1/not-ready.json')
       returnUri = await productNft.uri(13);
-      expect(returnUri).to.eq('https://token-cdn-domain/13/not_ready.json')
+      expect(returnUri).to.eq('https://token-cdn-domain/13/not-ready.json')
     });
 
     it("returns serves updated uri based on token status", async() => {
@@ -254,7 +254,7 @@ describe("ProductNft", () => {
 
     it("should show token in status 'not-ready' if token hasn't been minted", async() => {
       const returnUri = await productNft.uri(2000);
-      expect(returnUri).to.eq('https://token-cdn-domain/2000/not_ready.json')
+      expect(returnUri).to.eq('https://token-cdn-domain/2000/not-ready.json')
     });
   });
 
@@ -269,7 +269,7 @@ describe("ProductNft", () => {
       const tokenIdList = [1, 2, 3, 4, 5];
       const rarity = await productNft.returnRarityById(tokenIdList[1]);
       expect(mintFunction).to.emit(productNft, "MintedTokenInfo").withArgs(
-        tokenIdList[1], rarity, "not_ready",
+        tokenIdList[1], rarity, "not-ready",
       );
     });
   });
@@ -293,7 +293,7 @@ describe("ProductNft", () => {
   describe("setting the product status of NFTs upon mint and allows us to switch product status afterwards", async () => {
     beforeEach(setupProductNft)
 
-    it("sets the product status to not_ready for Mycelia & Diamond NFTs and ready for Silver NFTs", async() => {
+    it("sets the product status to not-ready for Mycelia & Diamond NFTs and ready for Silver NFTs", async() => {
       const tokenIdListMycelia = [1, 3, 5, 7, 8];
       const tokenIdListDiamond = [13, 14, 15, 16, 17];
       const tokenIdListSilver = [1013, 1014, 1015, 1016];
@@ -314,7 +314,7 @@ describe("ProductNft", () => {
       expect(getProductStatusSilver).to.equal(predictedProductStatusSilver);
     });
 
-    it("switches the product status of not_ready to ready for Diamond NFTs", async() => {
+    it("switches the product status of not-ready to ready for Diamond NFTs", async() => {
       await productNft.setTokensToMintPerRarity(12, "rarer");
       const overridesRarest = {value: ethers.utils.parseEther("7.5")}
       await productNft.rarerBatchMint(5, overridesRarest);
@@ -324,7 +324,7 @@ describe("ProductNft", () => {
       expect(getProductStatus).to.equal(1);
     });
 
-    it("switches the product status of not_ready to ready for Mycelia NFTs", async() => {
+    it("switches the product status of not-ready to ready for Mycelia NFTs", async() => {
       await productNft.setTokensToMintPerRarity(12, "rarest");
       const overridesRarest = {value: ethers.utils.parseEther("7.5")}
       await productNft.rarestBatchMint(5, overridesRarest);

@@ -14,3 +14,5 @@ product_nft_renders
 product_nft_metadata
 arguments.js
 fetchServerFile.js
+createAndUploadMetadata.js
+viewSpaceFiles.js

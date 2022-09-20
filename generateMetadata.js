@@ -1,7 +1,7 @@
 
 const fs = require('fs');
 
-const BASE_URI = "https://product-nft-metadata.nyc3.digitaloceanspaces.com";
+const BASE_URI = "";
 for (let i = 1; i <= 3000; i++) {
     let rarity;
     if (i <= 12) {
@@ -14,7 +14,7 @@ for (let i = 1; i <= 3000; i++) {
                 "Access to Valorize Admin Dashboard for a 3 year minimum",
                 "Premium Customer Support for the first 3 months guaranteed",
                 "Draft of tokenomic distribution portion of technical communication (whitepaper, blog post, etc...)",
-                "Token launch within the Valorize platform if applicable"
+                "Token launch on the Valorize platform if applicable"
             ]
         }
     } else if (i <= 1012) {
@@ -23,7 +23,7 @@ for (let i = 1; i <= 3000; i++) {
             value: "Diamond",
             description: "Valorize Diamond NFTs are a collection of 1000 NFTs by artist Valerii Spornikov which grant you the benefits described in the benefits property",
             benefits: [
-                "Token launch in the Valorize platform",
+                "Token launch on the Valorize platform",
                 "Access to Valorize Admin Dashboard for a 2 year minimum",
                 "Conversation with tokenomics expert to define token within the parameters of the Valorize platform",
                 "Priority Customer Support",
@@ -35,7 +35,7 @@ for (let i = 1; i <= 3000; i++) {
             value: "Silver",
             description: "Valorize Silver NFTs are a collection of 1000 NFTs by artist Valerii Spornikov which grant you the benefits described in the benefits property",
             benefits: [
-                "Token launch in the Valorize platform",
+                "Token launch on the Valorize platform",
                 "Access to Valorize Admin Dashboard for a 1 year minimum",
             ]
         }
@@ -49,10 +49,10 @@ for (let i = 1; i <= 3000; i++) {
                 "Token is now redeemed, welcome to the future"
             ][k]
         }
-        const url = ["not-ready", "ready", "redeemed"][k]
+        const status = ["not-ready", "ready", "redeemed"][k]
         let data = {
             title: "ValorizeDAO Product NFT",
-            animation_url: `${BASE_URI}/${i}/${url}.mp4`,
+            animation_url: `${BASE_URI}/${i}/${status}.mp4`,
             properties: {
                 token_id: i,
                 rarity,
@@ -65,7 +65,7 @@ for (let i = 1; i <= 3000; i++) {
         if (!fs.existsSync(outputDir)){
             fs.mkdirSync(outputDir, { recursive: true });
         }
-        fs.writeFile(outputDir + "/" + url + ".json", output, (err) => {
+        fs.writeFile(outputDir + "/" + status + ".json", output, (err) => {
             if (err) throw err;
             console.log('The file has been saved!');
         });
