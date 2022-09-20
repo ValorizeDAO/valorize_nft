@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract RoyaltyDistributor is AccessControl {
 
-  event royaltiesDistributed(address royaltyReceivers, uint256 royaltyAmount);
-  event receiverUpdated(address previousReceiver, address newReceiver);
+  event RoyaltiesDistributed(address royaltyReceivers, uint256 royaltyAmount);
+  event ReceiverUpdated(address previousReceiver, address newReceiver);
 
   address[] public royaltyReceivers;
 
@@ -56,7 +56,7 @@ contract RoyaltyDistributor is AccessControl {
     uint256 royaltyAmount = _calculateRoyaltyAmount();
     for( uint256 i=0; i < royaltyReceivers.length; i++) {
       payable(royaltyReceivers[i]).transfer(royaltyAmount);
-      emit royaltiesDistributed(royaltyReceivers[i], royaltyAmount); 
+      emit RoyaltiesDistributed(royaltyReceivers[i], royaltyAmount); 
     }
   }
 
@@ -70,7 +70,7 @@ contract RoyaltyDistributor is AccessControl {
       if(royaltyReceivers[i] == previousReceiver) {
         require(hasRole(keccak256(abi.encodePacked(i)), msg.sender));
         royaltyReceivers[i] = newReceiver;
-        emit receiverUpdated(previousReceiver, newReceiver);
+        emit ReceiverUpdated(previousReceiver, newReceiver);
         return;
       }
     }
