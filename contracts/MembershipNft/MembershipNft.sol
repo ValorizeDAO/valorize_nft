@@ -1,15 +1,18 @@
-//SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { IERC2981, IERC165 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
 
 /**
 @title MembershipNft
 @author Marco Huberts & Javier Gonzalez
 @dev Implementation of a Membership Non Fungible Token using ERC721.
 */
-
-contract MembershipNft is ERC721 {
+contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
 
     string public URI;
 
@@ -24,6 +27,12 @@ contract MembershipNft is ERC721 {
     uint256 public totalWhaleTokenAmount;
     uint256 public totalSealTokenAmount;
     uint256 public totalPlanktonTokenAmount;
+
+    bool internal frozen = false;
+
+    address royaltyDistributorAddress;
+    address[] artistAddresses;
+    bytes32 public constant ARTIST_ROLE = keccak256("ARTIST_ROLE");
 
     mapping(MintType => TokenIds) public TokenIdsByMintType;
 
@@ -43,16 +52,19 @@ contract MembershipNft is ERC721 {
       uint256 endingSilverTokenId;
     }
 
-    event MintedTokenInfo(uint256 tokenId, string rarity);
+  event MintedTokenInfo(uint256 tokenId, string rarity);
 
   constructor(
     string memory _URI,
     uint256[] memory _remainingWhaleFunctionCalls, //  [3, 12, 35, 0, 0] // [3, 6, 9, 0, 0] //[1, 2, 3, 0, 0]
     uint256[] memory _remainingSealFunctionCalls, //   [3, 18, 40, 90, 0] // [3, 6, 9, 12, 0] // [1, 2, 3, 4, 0]
-    uint256[] memory _remainingPlanktonFunctionCalls //[4, 60, 125, 310, 2301] // [3, 6, 9, 12, 15] // [1, 2, 3, 4, 5]
+    uint256[] memory _remainingPlanktonFunctionCalls, //[4, 60, 125, 310, 2301] // [3, 6, 9, 12, 15] // [1, 2, 3, 4, 5]
+    address[] memory _artistAddresses 
   ) ERC721("MEMBERSHIP", "VMEMB") {
     URI = _URI;
     
+    artistAddresses = _artistAddresses;
+
     whaleTokensLeft = (_remainingWhaleFunctionCalls[0] + _remainingWhaleFunctionCalls[1] + _remainingWhaleFunctionCalls[2] + _remainingWhaleFunctionCalls[3] + _remainingWhaleFunctionCalls[4]);
     sealTokensLeft = (_remainingSealFunctionCalls[0] + _remainingSealFunctionCalls[1] + _remainingSealFunctionCalls[2] + _remainingSealFunctionCalls[3] + _remainingSealFunctionCalls[4]);
     planktonTokensLeft = (_remainingPlanktonFunctionCalls[0] + _remainingPlanktonFunctionCalls[1] + _remainingPlanktonFunctionCalls[2] + _remainingPlanktonFunctionCalls[3] + _remainingPlanktonFunctionCalls[4]);
@@ -99,6 +111,17 @@ contract MembershipNft is ERC721 {
         totalWhaleTokenAmount + totalSealTokenAmount + _remainingPlanktonFunctionCalls[0] + _remainingPlanktonFunctionCalls[1] + _remainingPlanktonFunctionCalls[2] + _remainingPlanktonFunctionCalls[3] + 1,
         totalWhaleTokenAmount + totalSealTokenAmount + _remainingPlanktonFunctionCalls[0] + _remainingPlanktonFunctionCalls[1] + _remainingPlanktonFunctionCalls[2] + _remainingPlanktonFunctionCalls[3] + _remainingPlanktonFunctionCalls[4]
     );
+
+  _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+  for (uint256 i=0; i < _artistAddresses.length; i++) {
+    _setupRole(ARTIST_ROLE, _artistAddresses[i]);
+  }
+    _setRoleAdmin(ARTIST_ROLE, ARTIST_ROLE);  
+  
+  }
+
+  function freeze() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    frozen = true;
   }
 
   function _baseURI() internal view override returns (string memory) {
@@ -106,7 +129,20 @@ contract MembershipNft is ERC721 {
   }
 
   function _setURI(string memory baseURI) public{
+    require(!frozen);
     URI = baseURI;
+  }
+
+  function supportsInterface(bytes4 interfaceId) public view override(ERC721, AccessControl, IERC165) returns (bool) {
+    return interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
+  }
+
+  /**
+  *@dev   sends ether stored in the contract to admin.
+  */
+  function withdrawEther() external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+    (bool success, ) = msg.sender.call{value: address(this).balance}("");
+    require(success);
   }
 
   function _safeMint(address to, uint256 tokenId) override internal virtual {
@@ -220,4 +256,27 @@ contract MembershipNft is ERC721 {
       _mintFromRandomNumber(randomNumber, MintType.Plankton);
       planktonTokensLeft--;
   }
+
+  /**
+  * @dev  Information about the royalty is returned when provided with token id and sale price. 
+  *       Royalty information depends on token id: if token id is smaller than 12 than the artist address is given.
+  *       If token id is bigger than 12 than the funds will be sent to the contract that distributes royalties.    * @param _tokenId is the tokenId of an NFT that has been sold on the NFT marketplace
+  * @param _salePrice is the price of the sale of the given token id
+  */
+  function royaltyInfo(
+        uint256 _tokenId,
+        uint256 _salePrice
+    ) external view override returns (
+        address,
+        uint256 royaltyAmount
+    ) {
+        royaltyAmount = (_salePrice / 100) * 10;
+        if (_tokenId <= TokenIdsByMintType[MintType.Whale].endingMyceliaTokenId 
+        || (_tokenId > totalWhaleTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Seal].endingMyceliaTokenId) 
+        || (_tokenId > totalSealTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Plankton].endingMyceliaTokenId)) {
+            return(artistAddresses[(_tokenId-1)], royaltyAmount);
+        } else {
+          return(royaltyDistributorAddress, royaltyAmount); 
+        }
+    }    
 }
