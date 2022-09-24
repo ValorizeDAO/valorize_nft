@@ -13,7 +13,7 @@ const { expect } = chai;
 
 const provider = ethers.getDefaultProvider();
 
-describe.only("RoyaltyDistributor", () => {
+describe("RoyaltyDistributor", () => {
   let productNft: RoyaltyDistributor,
     deployer: Signer,
     admin1: Signer,
