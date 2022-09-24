@@ -155,4 +155,14 @@ describe.only("ExposedMembershipNft", () => {
       expect(findTokenURIPlankton).to.equal("https://token-cdn-domain/27");
     });
   });
+
+  describe("store rarities in mapping and return rarity when token Id is given", async() => {
+
+    it("sets the rarity per token id after mint", async() => {
+      await membershipNft.myceliaMint(0);
+      const rarity = await membershipNft.RarityByTokenId(1);
+      expect(rarity).to.equal("Mycelia");
+    });
+  });
+
 });
