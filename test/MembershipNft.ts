@@ -11,9 +11,9 @@ chai.use(solidity);
 const { expect } = chai;
 
 const INITIAL_URI = "https://token-cdn-domain/";
-const REMAINING_WHALE_FUNCTION_CALLS = [3, 18, 50, 0, 0];
-const REMAINING_SEAL_FUNCTION_CALLS = [53, 68, 125, 200, 0];
-const REMAINING_PLANKTON_FUNCTION_CALLS = [203, 223, 375, 1300, 3000];
+// const REMAINING_WHALE_FUNCTION_CALLS = [3, 18, 50, 0, 0];
+// const REMAINING_SEAL_FUNCTION_CALLS = [53, 68, 125, 200, 0];
+// const REMAINING_PLANKTON_FUNCTION_CALLS = [203, 223, 375, 1300, 3000];
 
 const REMAINING_WHALE_FUNCTION_CALLS_V2 = [1, 2, 3, 0, 0];
 const REMAINING_SEAL_FUNCTION_CALLS_V2 = [1, 2, 3, 4, 0];
@@ -30,7 +30,16 @@ describe.only("ExposedMembershipNft", () => {
   const setupMembershipNft = async () => {
     [deployer, admin1, admin2, vault, ...addresses] = await ethers.getSigners();
     membershipNft = await new ExposedMembershipNftFactory(deployer).deploy(
-      INITIAL_URI, REMAINING_WHALE_FUNCTION_CALLS_V2, REMAINING_SEAL_FUNCTION_CALLS_V2, REMAINING_PLANKTON_FUNCTION_CALLS_V2,
+      INITIAL_URI,
+      REMAINING_WHALE_FUNCTION_CALLS_V2, 
+      REMAINING_SEAL_FUNCTION_CALLS_V2, 
+      REMAINING_PLANKTON_FUNCTION_CALLS_V2,
+      await addresses[0].getAddress(), 
+      [await addresses[1].getAddress(), 
+       await addresses[2].getAddress(),
+       await addresses[3].getAddress(),
+       await addresses[4].getAddress(),
+       await addresses[5].getAddress()]
     );
     await membershipNft.deployed();
   };
@@ -50,7 +59,7 @@ describe.only("ExposedMembershipNft", () => {
     it("mints a random whale NFT", async () => {
       const overridesWhale = {value: ethers.utils.parseEther("1.0")}
       const leftBeforeMint = await membershipNft.whaleTokensLeft();
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
       const leftAfterMint = await membershipNft.whaleTokensLeft();
       expect(leftBeforeMint).to.equal(leftAfterMint.add(1));
     });
@@ -58,7 +67,7 @@ describe.only("ExposedMembershipNft", () => {
     it("mints a random seal NFT", async () => {
       const overridesSeal = {value: ethers.utils.parseEther("0.2")}
       const leftBeforeMint = await membershipNft.sealTokensLeft();;
-      await membershipNft.mintRandomSealNFT(overridesSeal);
+      await membershipNft.randomSealMint(overridesSeal);
       const leftAfterMint = await membershipNft.sealTokensLeft();;
       expect(leftBeforeMint).to.equal(leftAfterMint.add(1));
     });
@@ -66,7 +75,7 @@ describe.only("ExposedMembershipNft", () => {
     it("mints a random plankton NFT", async () => {
       const overridesPlankton = {value: ethers.utils.parseEther("0.1")}
       const leftBeforeMint = await membershipNft.planktonTokensLeft();
-      await membershipNft.mintRandomPlanktonNFT(overridesPlankton);
+      await membershipNft.randomPlanktonMint(overridesPlankton);
       const leftAfterMint = await membershipNft.planktonTokensLeft();
       expect(leftBeforeMint).to.equal(leftAfterMint.add(1));
     });
@@ -103,36 +112,51 @@ describe.only("ExposedMembershipNft", () => {
     });
   });
 
+  describe("withdrawal of ether", async () => {
+    beforeEach(setupMembershipNft)
+
+    it("withdraws ether stored in contract", async() => {
+      const overridesWhale = {value: ethers.utils.parseEther("1.5")}
+      await membershipNft.randomWhaleMint(overridesWhale);
+      const balanceContractAfterMint = await membershipNft.provider.getBalance(membershipNft.address);
+      await membershipNft.connect(deployer).withdrawEther();
+      const provider = ethers.provider;
+      const balanceContractAfterWithdrawal = await membershipNft.provider.getBalance(membershipNft.address);
+      expect(balanceContractAfterMint).to.equal(ethers.utils.parseEther("1.5"))
+      expect(balanceContractAfterWithdrawal).to.equal(ethers.utils.parseEther("0"));
+    });
+  });
+
   describe("Minting functions revert when not enough ETH sent and when no tokens left", async () => {
     beforeEach(setupMembershipNft)
 
     it("reverts when not enough ETH is sent for the whale minting function", async () => {
       const overridesWhale = {value: ethers.utils.parseEther("0.1")}
-      await expect(membershipNft.mintRandomWhaleNFT(overridesWhale)
+      await expect(membershipNft.randomWhaleMint(overridesWhale)
       ).to.be.revertedWith("Ether value sent is not correct");
     });
 
     it("reverts when not enough ETH is sent for the seal minting function", async () => {
       const overridesSeal = {value: ethers.utils.parseEther("0.1")}
-      await expect(membershipNft.mintRandomSealNFT(overridesSeal)
+      await expect(membershipNft.randomSealMint(overridesSeal)
       ).to.be.revertedWith("Ether value sent is not correct");
     });
 
     it("reverts when not enough ETH is sent for the plankton minting function", async () => {
       const overridesPlankton = {value: ethers.utils.parseEther("0.05")}
-      await expect(membershipNft.mintRandomPlanktonNFT(overridesPlankton)
+      await expect(membershipNft.randomPlanktonMint(overridesPlankton)
       ).to.be.revertedWith("Ether value sent is not correct");
     });
 
     it("reverts when no whale tokens are left", async () => {
       const overridesWhale = {value: ethers.utils.parseEther("1.0")}
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await expect(membershipNft.mintRandomWhaleNFT(overridesWhale)
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await expect(membershipNft.randomWhaleMint(overridesWhale)
       ).to.be.revertedWith("Whale NFTs are sold out");
     });
   });

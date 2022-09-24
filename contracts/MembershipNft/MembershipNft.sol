@@ -59,10 +59,12 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     uint256[] memory _remainingWhaleFunctionCalls, //  [3, 12, 35, 0, 0] // [3, 6, 9, 0, 0] //[1, 2, 3, 0, 0]
     uint256[] memory _remainingSealFunctionCalls, //   [3, 18, 40, 90, 0] // [3, 6, 9, 12, 0] // [1, 2, 3, 4, 0]
     uint256[] memory _remainingPlanktonFunctionCalls, //[4, 60, 125, 310, 2301] // [3, 6, 9, 12, 15] // [1, 2, 3, 4, 5]
+    address _royaltyDistributorAddress,
     address[] memory _artistAddresses 
   ) ERC721("MEMBERSHIP", "VMEMB") {
     URI = _URI;
     
+    royaltyDistributorAddress = _royaltyDistributorAddress;
     artistAddresses = _artistAddresses;
 
     whaleTokensLeft = (_remainingWhaleFunctionCalls[0] + _remainingWhaleFunctionCalls[1] + _remainingWhaleFunctionCalls[2] + _remainingWhaleFunctionCalls[3] + _remainingWhaleFunctionCalls[4]);
@@ -113,6 +115,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     );
 
   _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+  
   for (uint256 i=0; i < _artistAddresses.length; i++) {
     _setupRole(ARTIST_ROLE, _artistAddresses[i]);
   }
@@ -233,7 +236,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     }
   } 
 
-  function mintRandomWhaleNFT() public payable {
+  function randomWhaleMint() public payable {
       require(PRICE_PER_WHALE_TOKEN <= msg.value, "Ether value sent is not correct");
       require(whaleTokensLeft > 0, "Whale NFTs are sold out");
       uint256 randomNumber = _getRandomNumber(totalWhaleTokenAmount);
@@ -241,7 +244,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
       whaleTokensLeft--;
   }
 
-  function mintRandomSealNFT() public payable {
+  function randomSealMint() public payable {
       require(PRICE_PER_SEAL_TOKEN <= msg.value, "Ether value sent is not correct");
       require(sealTokensLeft > 0, "Seal NFTs are sold out");
       uint256 randomNumber = totalWhaleTokenAmount + _getRandomNumber(totalSealTokenAmount);
@@ -249,7 +252,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
       sealTokensLeft--;
   }
 
-  function mintRandomPlanktonNFT() public payable {
+  function randomPlanktonMint() public payable {
       require(PRICE_PER_PLANKTON_TOKEN <= msg.value, "Ether value sent is not correct");
       require(planktonTokensLeft > 0, "Plankton NFTs are sold out");
       uint256 randomNumber = (totalWhaleTokenAmount + totalSealTokenAmount) + _getRandomNumber(totalPlanktonTokenAmount);

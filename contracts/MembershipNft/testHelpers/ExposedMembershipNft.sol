@@ -14,11 +14,15 @@ contract ExposedMembershipNft is MembershipNft {
     string memory _URI,
     uint256[] memory _remainingWhaleFunctionCalls,
     uint256[] memory _remainingSealFunctionCalls, 
-    uint256[] memory _remainingPlanktonFunctionCalls) 
-    MembershipNft(_URI,
+    uint256[] memory _remainingPlanktonFunctionCalls,
+    address _royaltyDistributorAddress,
+    address[] memory _artistAddresses
+    ) MembershipNft(_URI,
     _remainingWhaleFunctionCalls,
     _remainingSealFunctionCalls,
-    _remainingPlanktonFunctionCalls) {}
+    _remainingPlanktonFunctionCalls,
+    _royaltyDistributorAddress,
+    _artistAddresses) {}
 
     function getRandomNumber(uint256 totalTokenAmount) external view returns (uint256) {
         return _getRandomNumber(totalTokenAmount);
