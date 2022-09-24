@@ -351,13 +351,10 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
 
     /**
     *@dev   This function updates the royalty receiving address
-    *@param previousReceiver is the address that was given a role before
     *@param newReceiver is the new address that replaces the previous address
     */
-    function updateRoyaltyReceiver(address previousReceiver, address newReceiver) external onlyRole(ARTIST_ROLE) {
-        require(artistAddress == previousReceiver);
+    function updateRoyaltyReceiver(address newReceiver) external onlyRole(ARTIST_ROLE) {
         artistAddress = newReceiver;
-        grantRole(ARTIST_ROLE, newReceiver);
     }
 
     /**

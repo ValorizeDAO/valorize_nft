@@ -379,17 +379,15 @@ describe("ProductNft", () => {
     });
 
     it("updates the royalty receiving address of the artist", async () => {
-      const addressArtistOld = await addresses[1].getAddress();
       const addressArtistNew = await addresses[2].getAddress();
-      await productNft.connect(addresses[1]).updateRoyaltyReceiver(addressArtistOld, addressArtistNew);
+      await productNft.connect(addresses[1]).updateRoyaltyReceiver(addressArtistNew);
       const addressArtistCall = await productNft.artistAddress();
       expect(addressArtistNew).to.equal(addressArtistCall);
     });
 
     it("fails when the previousReceiver does not have a role", async () => {
-      const randomAddress = await addresses[5].getAddress();
       const addressNew = await addresses[2].getAddress();
-      expect(productNft.connect(addresses[0]).updateRoyaltyReceiver(randomAddress, addressNew)
+      expect(productNft.connect(addresses[0]).updateRoyaltyReceiver(addressNew)
       ).to.be.revertedWith(
         "AccessControl: account 0x15d34aaf54267db7d7c367839aaf71a00a2c6a65 is missing role 0x877a78dc988c0ec5f58453b44888a55eb39755c3d5ed8d8ea990912aa3ef29c6");
     });
