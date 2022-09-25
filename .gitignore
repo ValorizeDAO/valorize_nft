@@ -10,3 +10,7 @@ build
 contracts/@*
 .env
 contracts-exposed
+createAndUploadMetadata.js
+product_nft_renders
+ProductNft.ts
+ProductNft
