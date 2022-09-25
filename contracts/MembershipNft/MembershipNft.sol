@@ -1,18 +1,21 @@
+
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { IERC2981, IERC165 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./utils/SlowMintable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
 
 /**
 @title MembershipNft
 @author Marco Huberts & Javier Gonzalez
 @dev Implementation of a Membership Non Fungible Token using ERC721.
 */
-contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
+
+contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, ReentrancyGuard {
+
 
     string public URI;
 
@@ -36,7 +39,6 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
 
     mapping(MintType => TokenIds) public TokenIdsByMintType;
 
-    enum Rarity { Mycelia, Obsidian, Diamond, Gold, Silver }
     enum MintType { Whale, Seal, Plankton }
 
     struct TokenIds {
@@ -66,7 +68,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     
     royaltyDistributorAddress = _royaltyDistributorAddress;
     artistAddresses = _artistAddresses;
-
+    
     whaleTokensLeft = (_remainingWhaleFunctionCalls[0] + _remainingWhaleFunctionCalls[1] + _remainingWhaleFunctionCalls[2] + _remainingWhaleFunctionCalls[3] + _remainingWhaleFunctionCalls[4]);
     sealTokensLeft = (_remainingSealFunctionCalls[0] + _remainingSealFunctionCalls[1] + _remainingSealFunctionCalls[2] + _remainingSealFunctionCalls[3] + _remainingSealFunctionCalls[4]);
     planktonTokensLeft = (_remainingPlanktonFunctionCalls[0] + _remainingPlanktonFunctionCalls[1] + _remainingPlanktonFunctionCalls[2] + _remainingPlanktonFunctionCalls[3] + _remainingPlanktonFunctionCalls[4]);
@@ -146,6 +148,14 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   function withdrawEther() external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
     (bool success, ) = msg.sender.call{value: address(this).balance}("");
     require(success);
+
+  /**
+  *@dev This function sets the amount of tokenIds that can be minted per rarity
+  *@param amount given amount of tokenIds that can be minted    
+  *@param rarity the rarity of the NFTs that will be minted
+  */
+  function setTokensToMintPerRarity(uint16 amount, string memory rarity) external onlyRole(DEFAULT_ADMIN_ROLE) returns (uint16) {
+      return super._setTokensToMintPerRarity(amount, rarity);
   }
 
   function _safeMint(address to, uint256 tokenId) override internal virtual {
@@ -236,27 +246,30 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     }
   } 
 
-  function randomWhaleMint() public payable {
+  function randomWhaleMint() public payable slowMintStatus("whale") {
       require(PRICE_PER_WHALE_TOKEN <= msg.value, "Ether value sent is not correct");
       require(whaleTokensLeft > 0, "Whale NFTs are sold out");
       uint256 randomNumber = _getRandomNumber(totalWhaleTokenAmount);
       _mintFromRandomNumber(randomNumber, MintType.Whale);
+      tokensLeftToMintPerRarityPerBatch["whale"] = tokensLeftToMintPerRarityPerBatch["whale"]--;
       whaleTokensLeft--;
   }
 
-  function randomSealMint() public payable {
+  function randomSealMint() public payable slowMintStatus("seal") {
       require(PRICE_PER_SEAL_TOKEN <= msg.value, "Ether value sent is not correct");
       require(sealTokensLeft > 0, "Seal NFTs are sold out");
       uint256 randomNumber = totalWhaleTokenAmount + _getRandomNumber(totalSealTokenAmount);
       _mintFromRandomNumber(randomNumber, MintType.Seal);
+      tokensLeftToMintPerRarityPerBatch["seal"] = tokensLeftToMintPerRarityPerBatch["seal"]--;
       sealTokensLeft--;
   }
 
-  function randomPlanktonMint() public payable {
+  function randomPlanktonMint() public payable slowMintStatus("plankton") {
       require(PRICE_PER_PLANKTON_TOKEN <= msg.value, "Ether value sent is not correct");
       require(planktonTokensLeft > 0, "Plankton NFTs are sold out");
       uint256 randomNumber = (totalWhaleTokenAmount + totalSealTokenAmount) + _getRandomNumber(totalPlanktonTokenAmount);
       _mintFromRandomNumber(randomNumber, MintType.Plankton);
+      tokensLeftToMintPerRarityPerBatch["plankton"] = tokensLeftToMintPerRarityPerBatch["plankton"]--;
       planktonTokensLeft--;
   }
 

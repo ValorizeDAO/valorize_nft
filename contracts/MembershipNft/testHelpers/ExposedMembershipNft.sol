@@ -24,6 +24,7 @@ contract ExposedMembershipNft is MembershipNft {
     _royaltyDistributorAddress,
     _artistAddresses) {}
 
+
     function getRandomNumber(uint256 totalTokenAmount) external view returns (uint256) {
         return _getRandomNumber(totalTokenAmount);
     }
