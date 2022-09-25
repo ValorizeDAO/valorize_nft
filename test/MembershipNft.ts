@@ -30,7 +30,16 @@ describe.only("ExposedMembershipNft", () => {
   const setupMembershipNft = async () => {
     [deployer, admin1, admin2, vault, ...addresses] = await ethers.getSigners();
     membershipNft = await new ExposedMembershipNftFactory(deployer).deploy(
-      INITIAL_URI, REMAINING_WHALE_FUNCTION_CALLS_V2, REMAINING_SEAL_FUNCTION_CALLS_V2, REMAINING_PLANKTON_FUNCTION_CALLS_V2,
+      INITIAL_URI,
+      REMAINING_WHALE_FUNCTION_CALLS_V2, 
+      REMAINING_SEAL_FUNCTION_CALLS_V2, 
+      REMAINING_PLANKTON_FUNCTION_CALLS_V2,
+      await addresses[0].getAddress(), 
+      [await addresses[1].getAddress(), 
+       await addresses[2].getAddress(),
+       await addresses[3].getAddress(),
+       await addresses[4].getAddress(),
+       await addresses[5].getAddress()]
     );
     await membershipNft.deployed();
   };
@@ -109,25 +118,40 @@ describe.only("ExposedMembershipNft", () => {
     });
   });
 
-  describe("Minting functions revert when not enough ETH sent and when no tokens left/batch sold out", async () => {
+  describe("withdrawal of ether", async () => {
+    beforeEach(setupMembershipNft)
+
+    it("withdraws ether stored in contract", async() => {
+      const overridesWhale = {value: ethers.utils.parseEther("1.5")}
+      await membershipNft.randomWhaleMint(overridesWhale);
+      const balanceContractAfterMint = await membershipNft.provider.getBalance(membershipNft.address);
+      await membershipNft.connect(deployer).withdrawEther();
+      const provider = ethers.provider;
+      const balanceContractAfterWithdrawal = await membershipNft.provider.getBalance(membershipNft.address);
+      expect(balanceContractAfterMint).to.equal(ethers.utils.parseEther("1.5"))
+      expect(balanceContractAfterWithdrawal).to.equal(ethers.utils.parseEther("0"));
+    });
+  });
+
+  describe("Minting functions revert when not enough ETH sent and when no tokens left", async () => {
     beforeEach(setupMembershipNft)
 
     it("reverts when not enough ETH is sent for the whale minting function", async () => {
       await membershipNft.setTokensToMintPerRarity(5, "whale");
       const overridesWhale = {value: ethers.utils.parseEther("0.1")}
-      await expect(membershipNft.mintRandomWhaleNFT(overridesWhale)
+      await expect(membershipNft.randomWhaleMint(overridesWhale)
       ).to.be.revertedWith("Ether value sent is not correct");
     });
 
     it("reverts when not enough ETH is sent for the seal minting function", async () => {
       const overridesSeal = {value: ethers.utils.parseEther("0.1")}
-      await expect(membershipNft.mintRandomSealNFT(overridesSeal)
+      await expect(membershipNft.randomSealMint(overridesSeal)
       ).to.be.revertedWith("Ether value sent is not correct");
     });
 
     it("reverts when not enough ETH is sent for the plankton minting function", async () => {
       const overridesPlankton = {value: ethers.utils.parseEther("0.05")}
-      await expect(membershipNft.mintRandomPlanktonNFT(overridesPlankton)
+      await expect(membershipNft.randomPlanktonMint(overridesPlankton)
       ).to.be.revertedWith("Ether value sent is not correct");
     });
 

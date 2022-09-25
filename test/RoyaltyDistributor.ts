@@ -55,12 +55,22 @@ describe("RoyaltyDistributor", () => {
       expect(balanceArtistAfterRoyalty).to.equal(balanceArtistBeforeRoyalty.add(ethers.utils.parseEther("4")));
     });
 
+    it("emits an event after distribution of the royalties", async () => {
+      const override = {value: ethers.utils.parseEther("8")}
+      await productNft.receiveRoyalties(override);
+      const artistAddress = await addresses[2].getAddress();
+      const royaltyDistributor = await productNft.royaltyTransfer();
+      expect(royaltyDistributor).to.emit(productNft, "RoyaltiesDistributed").withArgs(
+        artistAddress, ethers.utils.parseEther("4")
+      );
+    });
+
     it("updates the royalty receiving address", async () => {
       const addressOld = await addresses[3].getAddress();
       const addressNew = await addresses[7].getAddress();
       const updateRoyaltyReceiver = await productNft.connect(addresses[3]
         ).updateRoyaltyReceiver(addressOld, addressNew);
-      expect(updateRoyaltyReceiver).to.emit(productNft, "receiverUpdated").withArgs(
+      expect(updateRoyaltyReceiver).to.emit(productNft, "ReceiverUpdated").withArgs(
         addressOld, addressNew
       );
     });

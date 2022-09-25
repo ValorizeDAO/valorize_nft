@@ -1,18 +1,13 @@
 import { ethers } from "hardhat";
+const args = require("./argumentsProductNft")
 
 async function main() {
-  const BASE_URI = "https://token-cdn-domain/";
-  const START_RARER = 12;
-  const START_RARE = 1012;
-  const TOTAL_AMOUNT = 2012;
 
   const ProductNft = await ethers.getContractFactory("ProductNft");
   const productNft = await ProductNft.deploy(      
-    BASE_URI,  
-    START_RARER, 
-    START_RARE, 
-    TOTAL_AMOUNT);
-
+    ...args
+  );
+  console.log({ productNft })
   await productNft.deployed();
 
   console.log(`deployed to ${productNft.address}`);

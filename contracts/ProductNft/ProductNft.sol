@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -27,9 +27,9 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     Counters.Counter public rarestTokenIdCounter;
     Counters.Counter public rarerTokenIdCounter;
     Counters.Counter public rareTokenIdCounter;
-    uint256 public constant PRICE_PER_RAREST_TOKEN = 1.5 ether;
-    uint256 public constant PRICE_PER_RARER_TOKEN = 0.55 ether;
-    uint256 public constant PRICE_PER_RARE_TOKEN = 0.2 ether;
+    uint256 public PRICE_PER_RAREST_TOKEN;
+    uint256 public PRICE_PER_RARER_TOKEN;
+    uint256 public PRICE_PER_RARE_TOKEN;
     bool internal frozen = false;
     address public royaltyDistributorAddress;
     address public artistAddress;
@@ -38,9 +38,9 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     mapping(uint256 => ProductStatus) public ProductStatusByTokenId;
   
     enum Rarity {rarest, rarer, rare}
-    enum ProductStatus {not_ready, ready, deployed}
+    enum ProductStatus {not_ready, ready, redeemed}
 
-    event ReturnTokenInfo(uint256 tokenId, string rarity, ProductStatus);
+    event MintedTokenInfo(uint256 tokenId, string rarity, string productStatus);
 
     constructor( 
         string memory baseURI_,
@@ -60,6 +60,13 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
             _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
             _setupRole(ARTIST_ROLE, _artistAddress);
             _setRoleAdmin(ARTIST_ROLE, ARTIST_ROLE);
+            _setTokensToMintPerRarity(1, "rarest");
+            _setTokensToMintPerRarity(12, "rarer");
+            _setTokensToMintPerRarity(36, "rare");
+            rarestBatchMint(1);
+            rarerBatchMint(12);
+            rareBatchMint(36);
+            setTokenPrice();
     }
 
     function freeze() external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -70,6 +77,24 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
         require(!frozen);
         _setURI(_baseURI);
     }
+
+    function setTokenPrice() internal {
+        PRICE_PER_RAREST_TOKEN = 1.5 ether;
+        PRICE_PER_RARER_TOKEN = 0.5 ether;
+        PRICE_PER_RARE_TOKEN = 0.1 ether;
+    }
+
+    /**
+    *@dev   This function allows the generation of a URI for a specific token Id with the format {baseUri}/{id}/{status}.json
+    *       the id in this case is a decimal string representation of the token Id
+    *@param tokenId is the token Id to generate or return the URI for.     
+    */
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        string[3] memory nftStatuses = ["not-ready", "ready", "redeemed"];
+        string memory status = nftStatuses[uint256(ProductStatusByTokenId[tokenId])];
+        return string(abi.encodePacked(super.uri(tokenId), Strings.toString(tokenId), "/", status, ".json"));
+    }
+    
 
     /**
     * @dev  This function returns the token rarity
@@ -128,7 +153,9 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     */
     function _setAndEmitTokenInfo(uint256 tokenId, Rarity rarity) internal {
         _initialProductStatusBasedOnRarity(tokenId, rarity);
-        emit ReturnTokenInfo(tokenId, returnRarityById(tokenId), ProductStatusByTokenId[tokenId]);
+        string[3] memory nftStatuses = ["not-ready", "ready", "redeemed"];
+        string memory status = nftStatuses[uint256(ProductStatusByTokenId[tokenId])];
+        emit MintedTokenInfo(tokenId, returnRarityById(tokenId), status);
     }
 
     /**
@@ -197,9 +224,9 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     *@param tokensLeft the number of tokens left per rarity.
     */
     function _mintRequires(uint16 amount, uint256 price, uint256 tokensLeft) internal {
-        require(amount >= 1);
-        require(tokensLeft > 0);
-        require(msg.value >= price * amount, "More ETH");
+        require(amount > 0);
+        require(tokensLeft > 0, "This rarity is sold out");
+        require(msg.value >= price * amount, "Not enough ETH sent");
     }
     
     /**
@@ -223,8 +250,10 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rarest, _permittedAmount(amount, "rarest", rarestTokensLeft)), 
             _turnAmountIntoArray(_permittedAmount(amount, "rarest", rarestTokensLeft)), '');
-
+        
         _reducesTokensLeft(_permittedAmount(amount, "rarest", rarestTokensLeft), Rarity.rarest);
+        
+        tokensLeftToMintPerRarityPerBatch["rarest"] = tokensLeftToMintPerRarityPerBatch["rarest"] - amount;
     }
 
     /**
@@ -232,7 +261,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     *@param amount Every call will recursively increment the tokenId 
     *       depending on the amount of tokens the user wants to batch mint.
     *       These tokenIds are associated with the Diamond rarity. 
-    *       This function can be called for 0.55 ETH.
+    *       This function can be called for 0.5 ETH.
     */
     function rarerBatchMint(uint16 amount) public payable slowMintStatus("rarer") {
         _mintRequires(amount, PRICE_PER_RARER_TOKEN, rarerTokensLeft);
@@ -240,8 +269,10 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
         _mintBatch(msg.sender, 
             _turnTokenIdsIntoArray(Rarity.rarer, _permittedAmount(amount, "rarer", rarerTokensLeft)), 
             _turnAmountIntoArray(_permittedAmount(amount, "rarer", rarerTokensLeft)), '');
-
+        
         _reducesTokensLeft(_permittedAmount(amount, "rarer", rarerTokensLeft), Rarity.rarer);
+        
+        tokensLeftToMintPerRarityPerBatch["rarer"] = tokensLeftToMintPerRarityPerBatch["rarer"] - amount;
     }
 
     /**
@@ -249,7 +280,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     *@param amount Every call will recursively increment the tokenId 
     *       depending on the amount of tokens the user wants to batch mint.
     *       These tokenIds are associated with the Silver rarity. 
-    *       This function can be called for 0.2 ETH.
+    *       This function can be called for 0.1 ETH.
     */
     function rareBatchMint(uint16 amount) public payable slowMintStatus("rare") {
         _mintRequires(amount, PRICE_PER_RARE_TOKEN, rareTokensLeft);    
@@ -259,6 +290,8 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
             _turnAmountIntoArray(_permittedAmount(amount, "rare", rareTokensLeft)), '');
         
         _reducesTokensLeft(_permittedAmount(amount, "rare", rareTokensLeft), Rarity.rare);
+        
+        tokensLeftToMintPerRarityPerBatch["rare"] = tokensLeftToMintPerRarityPerBatch["rare"] - amount;
     }
 
     /**
@@ -269,7 +302,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     *@param rarity the rarity of the token that is minted.
     */
     function _initialProductStatusBasedOnRarity(uint256 tokenId, Rarity rarity) internal {
-        if (rarity == Rarity.rarest || rarity == Rarity.rare) {
+        if (rarity == Rarity.rare) {
             ProductStatusByTokenId[tokenId] = ProductStatus.ready;
         } else {
             ProductStatusByTokenId[tokenId] = ProductStatus.not_ready;
@@ -278,7 +311,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
 
     /**
     *@dev   This function will switch the status of product deployment to ready. 
-    *       If the token has not been deployed and the product status is 
+    *       If the token has not been redeemed and the product status is 
     *       not_ready the status will be set to ready.
     *       This can only be done for tokens of the Diamond/Rarer rarity.
     *@param tokenIdList is the array of token Ids that is used to change the 
@@ -286,7 +319,7 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     */
     function switchProductStatusToReady(uint256[] memory tokenIdList) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for(uint256 i=0; i < tokenIdList.length;) {
-            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.not_ready, "Wrong type");
+            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.not_ready, "Status is already set to ready");
             ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.ready;
             unchecked {
                 i++;
@@ -295,17 +328,17 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
     }
 
     /**
-    *@dev   This function will switch the status of product deployment to deployed. 
-    *       If the token has been deployed and the product status is 
-    *       ready the status will be set to deployed.
+    *@dev   This function will switch the status of product deployment to redeemed. 
+    *       If the token has been redeemed and the product status is 
+    *       ready the status will be set to redeemed.
     *       This can be done for all rarities.
     *@param tokenIdList is the array of token Ids that is used to change the 
     *       deployment status of a token launched using the Valorize Token Launcher
     */
-    function switchProductStatusToDeployed(uint256[] memory tokenIdList) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function switchProductStatusToRedeemed(uint256[] memory tokenIdList) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for(uint256 i=0; i < tokenIdList.length;) {
-            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.ready, "Not ready");
-            ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.deployed;
+            require(ProductStatusByTokenId[tokenIdList[i]] == ProductStatus.ready, "Token is not ready");
+            ProductStatusByTokenId[tokenIdList[i]] = ProductStatus.redeemed;
             unchecked {
                 i++;
             }
@@ -318,13 +351,10 @@ contract ProductNft is ERC1155, IERC2981, AccessControl, ReentrancyGuard, SlowMi
 
     /**
     *@dev   This function updates the royalty receiving address
-    *@param previousReceiver is the address that was given a role before
     *@param newReceiver is the new address that replaces the previous address
     */
-    function updateRoyaltyReceiver(address previousReceiver, address newReceiver) external onlyRole(ARTIST_ROLE) {
-        require(artistAddress == previousReceiver);
+    function updateRoyaltyReceiver(address newReceiver) external onlyRole(ARTIST_ROLE) {
         artistAddress = newReceiver;
-        grantRole(ARTIST_ROLE, newReceiver);
     }
 
     /**
