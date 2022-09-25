@@ -38,6 +38,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     bytes32 public constant ARTIST_ROLE = keccak256("ARTIST_ROLE");
 
     mapping(MintType => TokenIds) public TokenIdsByMintType;
+    mapping(uint256 => string) public RarityByTokenId;
 
     enum MintType { Whale, Seal, Plankton }
 
@@ -192,6 +193,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     } else {
       _safeMint(msg.sender, TokenIdsByMintType[mintType].startingMyceliaTokenId);
       emit MintedTokenInfo(TokenIdsByMintType[mintType].startingMyceliaTokenId, "Mycelia");
+      RarityByTokenId[TokenIdsByMintType[mintType].startingMyceliaTokenId] = "Mycelia";
       TokenIdsByMintType[mintType].startingMyceliaTokenId++;
     }
   }
@@ -203,6 +205,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     } else {
       _safeMint(msg.sender, TokenIdsByMintType[mintType].startingObsidianTokenId);
       emit MintedTokenInfo(TokenIdsByMintType[mintType].startingObsidianTokenId, "Obsidian");
+      RarityByTokenId[TokenIdsByMintType[mintType].startingObsidianTokenId] = "Obsidian";
       TokenIdsByMintType[mintType].startingObsidianTokenId++;
     }
   }
@@ -217,6 +220,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     } else {
       _safeMint(msg.sender, TokenIdsByMintType[mintType].startingDiamondTokenId);
       emit MintedTokenInfo(TokenIdsByMintType[mintType].startingDiamondTokenId, "Diamond");
+      RarityByTokenId[TokenIdsByMintType[mintType].startingDiamondTokenId] = "Diamond";
       TokenIdsByMintType[mintType].startingDiamondTokenId++;
     }
   } 
@@ -231,6 +235,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     } else {
       _safeMint(msg.sender, TokenIdsByMintType[mintType].startingGoldTokenId);
       emit MintedTokenInfo(TokenIdsByMintType[mintType].startingGoldTokenId, "Gold");
+      RarityByTokenId[TokenIdsByMintType[mintType].startingGoldTokenId] = "Gold";
       TokenIdsByMintType[mintType].startingGoldTokenId++;
     }
   }
@@ -242,6 +247,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     } else {
       _safeMint(msg.sender, TokenIdsByMintType[MintType.Plankton].startingSilverTokenId);
       emit MintedTokenInfo(TokenIdsByMintType[MintType.Plankton].startingSilverTokenId, "Silver");
+      RarityByTokenId[TokenIdsByMintType[MintType.Plankton].startingSilverTokenId] = "Silver";
       TokenIdsByMintType[MintType.Plankton].startingSilverTokenId++;
     }
   } 
