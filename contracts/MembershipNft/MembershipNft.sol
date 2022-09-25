@@ -149,6 +149,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
   function withdrawEther() external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
     (bool success, ) = msg.sender.call{value: address(this).balance}("");
     require(success);
+  }
 
   /**
   *@dev This function sets the amount of tokenIds that can be minted per rarity
@@ -257,7 +258,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
       require(whaleTokensLeft > 0, "Whale NFTs are sold out");
       uint256 randomNumber = _getRandomNumber(totalWhaleTokenAmount);
       _mintFromRandomNumber(randomNumber, MintType.Whale);
-      tokensLeftToMintPerRarityPerBatch["whale"] = tokensLeftToMintPerRarityPerBatch["whale"]--;
+      tokensLeftToMintPerRarityPerBatch["whale"] = tokensLeftToMintPerRarityPerBatch["whale"]-1;
       whaleTokensLeft--;
   }
 
@@ -266,7 +267,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
       require(sealTokensLeft > 0, "Seal NFTs are sold out");
       uint256 randomNumber = totalWhaleTokenAmount + _getRandomNumber(totalSealTokenAmount);
       _mintFromRandomNumber(randomNumber, MintType.Seal);
-      tokensLeftToMintPerRarityPerBatch["seal"] = tokensLeftToMintPerRarityPerBatch["seal"]--;
+      tokensLeftToMintPerRarityPerBatch["seal"] = tokensLeftToMintPerRarityPerBatch["seal"]-1;
       sealTokensLeft--;
   }
 
@@ -275,7 +276,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
       require(planktonTokensLeft > 0, "Plankton NFTs are sold out");
       uint256 randomNumber = (totalWhaleTokenAmount + totalSealTokenAmount) + _getRandomNumber(totalPlanktonTokenAmount);
       _mintFromRandomNumber(randomNumber, MintType.Plankton);
-      tokensLeftToMintPerRarityPerBatch["plankton"] = tokensLeftToMintPerRarityPerBatch["plankton"]--;
+      tokensLeftToMintPerRarityPerBatch["plankton"] = tokensLeftToMintPerRarityPerBatch["plankton"]-1;
       planktonTokensLeft--;
   }
 

@@ -60,7 +60,7 @@ describe.only("ExposedMembershipNft", () => {
       await membershipNft.setTokensToMintPerRarity(5, "whale");
       const overridesWhale = {value: ethers.utils.parseEther("1.0")}
       const leftBeforeMint = await membershipNft.whaleTokensLeft();
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
       const leftAfterMint = await membershipNft.whaleTokensLeft();
       expect(leftBeforeMint).to.equal(leftAfterMint.add(1));
     });
@@ -69,7 +69,7 @@ describe.only("ExposedMembershipNft", () => {
       await membershipNft.setTokensToMintPerRarity(5, "seal");
       const overridesSeal = {value: ethers.utils.parseEther("0.2")}
       const leftBeforeMint = await membershipNft.sealTokensLeft();;
-      await membershipNft.mintRandomSealNFT(overridesSeal);
+      await membershipNft.randomSealMint(overridesSeal);
       const leftAfterMint = await membershipNft.sealTokensLeft();;
       expect(leftBeforeMint).to.equal(leftAfterMint.add(1));
     });
@@ -78,7 +78,7 @@ describe.only("ExposedMembershipNft", () => {
       await membershipNft.setTokensToMintPerRarity(5, "plankton");
       const overridesPlankton = {value: ethers.utils.parseEther("0.1")}
       const leftBeforeMint = await membershipNft.planktonTokensLeft();
-      await membershipNft.mintRandomPlanktonNFT(overridesPlankton);
+      await membershipNft.randomPlanktonMint(overridesPlankton);
       const leftAfterMint = await membershipNft.planktonTokensLeft();
       expect(leftBeforeMint).to.equal(leftAfterMint.add(1));
     });
@@ -122,6 +122,7 @@ describe.only("ExposedMembershipNft", () => {
     beforeEach(setupMembershipNft)
 
     it("withdraws ether stored in contract", async() => {
+      await membershipNft.setTokensToMintPerRarity(5, "whale");
       const overridesWhale = {value: ethers.utils.parseEther("1.5")}
       await membershipNft.randomWhaleMint(overridesWhale);
       const balanceContractAfterMint = await membershipNft.provider.getBalance(membershipNft.address);
@@ -144,12 +145,14 @@ describe.only("ExposedMembershipNft", () => {
     });
 
     it("reverts when not enough ETH is sent for the seal minting function", async () => {
+      await membershipNft.setTokensToMintPerRarity(5, "seal");
       const overridesSeal = {value: ethers.utils.parseEther("0.1")}
       await expect(membershipNft.randomSealMint(overridesSeal)
       ).to.be.revertedWith("Ether value sent is not correct");
     });
 
     it("reverts when not enough ETH is sent for the plankton minting function", async () => {
+      await membershipNft.setTokensToMintPerRarity(5, "plankton");
       const overridesPlankton = {value: ethers.utils.parseEther("0.05")}
       await expect(membershipNft.randomPlanktonMint(overridesPlankton)
       ).to.be.revertedWith("Ether value sent is not correct");
@@ -158,26 +161,23 @@ describe.only("ExposedMembershipNft", () => {
     it("reverts when no whale tokens are left", async () => {
       await membershipNft.setTokensToMintPerRarity(7, "whale");
       const overridesWhale = {value: ethers.utils.parseEther("1.0")}
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await expect(membershipNft.mintRandomWhaleNFT(overridesWhale)
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await expect(membershipNft.randomWhaleMint(overridesWhale)
       ).to.be.revertedWith("Whale NFTs are sold out");
     });
 
     it("reverts when too many NFTs have been minted per batch per rarity", async () => {
-      await membershipNft.setTokensToMintPerRarity(5, "whale");
+      await membershipNft.setTokensToMintPerRarity(3, "whale");
       const overridesWhale = {value: ethers.utils.parseEther("1.0")}
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await membershipNft.mintRandomWhaleNFT(overridesWhale);
-      await expect(membershipNft.mintRandomWhaleNFT(overridesWhale)
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await expect(membershipNft.randomWhaleMint(overridesWhale)
       ).to.be.revertedWith("Batch sold out");
     });
   });
