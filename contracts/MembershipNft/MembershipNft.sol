@@ -144,7 +144,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
   }
 
   /**
-  *@dev   sends ether stored in the contract to admin.
+  *@dev Sends ether stored in the contract to admin.
   */
   function withdrawEther() external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
     (bool success, ) = msg.sender.call{value: address(this).balance}("");
@@ -164,11 +164,22 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     _safeMint(to, tokenId, "");
   }
 
+  /**
+  *@dev This function returns a random number when the total token amount is given.
+  *     The random number will be between the given total token amount and 1.
+  *@param totalTokenAmount is the amount of tokens that are available per mint type.    
+  */
   function _getRandomNumber(uint256 totalTokenAmount) internal view returns (uint256 randomNumber) {
     uint256 i = uint256(uint160(address(msg.sender)));
     randomNumber = (block.difficulty + i) % totalTokenAmount + 1;
   }
  
+  /**
+  *@dev This function determines which rarity should be minted based on the random number.
+  *@param randomNumber is the number received from _getRandomNumber.
+  *@param mintType is the mint type which determines which predefined set of 
+  *     token Ids will be minted (see constructor).   
+  */
   function _mintFromRandomNumber(uint256 randomNumber, MintType mintType) internal {
     if (randomNumber <= TokenIdsByMintType[mintType].endingMyceliaTokenId) {     
       _myceliaMint(mintType);
@@ -187,9 +198,16 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     }
   }
 
+  /**
+  *@dev This mints a mycelia NFT when the startingMyceliaTokenId is lower than the endingMyceliaTokenId
+  *     After mint, the startingMyceliaTokenId will increase by 1.
+  *     If startingMyceliaTokenId is higher than endingMyceliaTokenId the Obsidian rarity will be minted.
+  *@param mintType is the mint type which determines which predefined set of 
+  *     token Ids will be minted (see constructor).   
+  */
   function _myceliaMint(MintType mintType) internal { 
     if (TokenIdsByMintType[mintType].startingMyceliaTokenId > TokenIdsByMintType[mintType].endingMyceliaTokenId) {
-      _mintFromRandomNumber((TokenIdsByMintType[mintType].startingMyceliaTokenId+1), mintType);
+      _mintFromRandomNumber((TokenIdsByMintType[mintType].startingObsidianTokenId), mintType);
     
     } else {
       _safeMint(msg.sender, TokenIdsByMintType[mintType].startingMyceliaTokenId);
@@ -198,10 +216,16 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
       TokenIdsByMintType[mintType].startingMyceliaTokenId++;
     }
   }
-
+  /**
+  *@dev This mints an obsidian NFT when the startingObsidianTokenId is lower than the endingObsidianTokenId
+  *     After mint, the startingObsidianTokenId will increase by 1.
+  *     If startingObsidianTokenId is higher than endingObsidianTokenId the Diamond rarity will be minted.
+  *@param mintType is the mint type which determines which predefined set of 
+  *     token Ids will be minted (see constructor).   
+  */
   function _obsidianMint(MintType mintType) internal {
     if (TokenIdsByMintType[mintType].startingObsidianTokenId > TokenIdsByMintType[mintType].endingObsidianTokenId) {
-      _mintFromRandomNumber(TokenIdsByMintType[mintType].startingObsidianTokenId+1, mintType);
+      _mintFromRandomNumber(TokenIdsByMintType[mintType].startingDiamondTokenId, mintType);
     
     } else {
       _safeMint(msg.sender, TokenIdsByMintType[mintType].startingObsidianTokenId);
@@ -210,13 +234,22 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
       TokenIdsByMintType[mintType].startingObsidianTokenId++;
     }
   }
-
+  /**
+  *@dev This mints a diamond NFT when the startingDiamondTokenId is lower than the endingDiamondTokenId
+  *     In other words, a diamond NFT will be minted when there are still diamond NFTs available.
+  *     After mint, the startingDiamondTokenId will increase by 1.
+  *     If startingDiamondTokenId from mint type whale is higher than endingDiamondTokenId from mint type whale
+  *     then startingMyceliaTokenId (or startingObsidianTokenId) will be minted.
+  *     If startingDiamondTokenId is higher than endingDiamondTokenId the Gold rarity will be minted.
+  *@param mintType is the mint type which determines which predefined set of 
+  *     token Ids will be minted (see constructor).   
+  */
   function _diamondMint(MintType mintType) internal {
     if (TokenIdsByMintType[MintType.Whale].startingDiamondTokenId > TokenIdsByMintType[MintType.Whale].endingDiamondTokenId) {
       _mintFromRandomNumber(TokenIdsByMintType[MintType.Whale].startingMyceliaTokenId, MintType.Whale);
     
     } else if(TokenIdsByMintType[mintType].startingDiamondTokenId > TokenIdsByMintType[mintType].endingDiamondTokenId) {
-      _mintFromRandomNumber(TokenIdsByMintType[mintType].startingDiamondTokenId+1, mintType);
+      _mintFromRandomNumber(TokenIdsByMintType[mintType].startingGoldTokenId, mintType);
     
     } else {
       _safeMint(msg.sender, TokenIdsByMintType[mintType].startingDiamondTokenId);
@@ -226,9 +259,19 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     }
   } 
 
+  /**
+  *@dev This mints a gold NFT when the startingGoldTokenId is lower than the endingGoldTokenId
+  *     After mint, the startingGoldTokenId will increase by 1.
+  *     If startingGoldTokenId from mint type seal is higher than endingGoldTokenId from mint type seal
+  *     then startingMyceliaTokenId (or higher rarity) should be minted.
+  *     If startingGoldTokenId from mint type plankton is higher than endingGoldTokenId from mint type plankton
+  *     then the startingSilverTokenId should be minted.
+  *@param mintType is the mint type which determines which predefined set of 
+  *     token Ids will be minted (see constructor).   
+  */
   function _goldMint(MintType mintType) internal {
     if (TokenIdsByMintType[MintType.Plankton].startingGoldTokenId > TokenIdsByMintType[MintType.Plankton].endingGoldTokenId) {
-      _mintFromRandomNumber(TokenIdsByMintType[mintType].startingGoldTokenId+1, mintType);
+      _mintFromRandomNumber(TokenIdsByMintType[mintType].startingSilverTokenId, mintType);
     
     } else if(TokenIdsByMintType[MintType.Seal].startingGoldTokenId > TokenIdsByMintType[MintType.Seal].endingGoldTokenId) {
       _mintFromRandomNumber(TokenIdsByMintType[MintType.Seal].startingMyceliaTokenId, MintType.Seal);
@@ -241,6 +284,12 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     }
   }
 
+  /**
+  *@dev This mints a silver NFT only for mint type plankton when the startingSilverTokenId is lower than the endingSilverTokenId
+  *     After mint, the startingSilverTokenId will increase by 1.
+  *     If startingSilverTokenId from mint type plankton is higher than endingSilverTokenId from mint type plankton
+  *     then startingMyceliaTokenId (or higher rarity) should be minted. 
+  */
   function _silverMint() internal {
     if(TokenIdsByMintType[MintType.Plankton].startingSilverTokenId > TokenIdsByMintType[MintType.Plankton].endingSilverTokenId) {
       _mintFromRandomNumber(TokenIdsByMintType[MintType.Plankton].startingMyceliaTokenId, MintType.Plankton);
@@ -253,6 +302,9 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     }
   } 
 
+  /**
+  *@dev Random minting of token Ids associated with the whale mint type.
+  */
   function randomWhaleMint() public payable slowMintStatus("whale") {
       require(PRICE_PER_WHALE_TOKEN <= msg.value, "Ether value sent is not correct");
       require(whaleTokensLeft > 0, "Whale NFTs are sold out");
@@ -262,6 +314,9 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
       whaleTokensLeft--;
   }
 
+  /**
+  *@dev Random minting of token Ids associated with the seal mint type.
+  */
   function randomSealMint() public payable slowMintStatus("seal") {
       require(PRICE_PER_SEAL_TOKEN <= msg.value, "Ether value sent is not correct");
       require(sealTokensLeft > 0, "Seal NFTs are sold out");
@@ -271,6 +326,9 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
       sealTokensLeft--;
   }
 
+  /**
+  *@dev Random minting of token Ids associated with the plankton mint type.
+  */
   function randomPlanktonMint() public payable slowMintStatus("plankton") {
       require(PRICE_PER_PLANKTON_TOKEN <= msg.value, "Ether value sent is not correct");
       require(planktonTokensLeft > 0, "Plankton NFTs are sold out");
