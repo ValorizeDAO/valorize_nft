@@ -68,14 +68,24 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     royaltyDistributorAddress = _royaltyDistributorAddress;
     artistAddresses = _artistAddresses;
     
-    whaleTokensLeft = (_remainingWhaleFunctionCalls[0] + _remainingWhaleFunctionCalls[1] + _remainingWhaleFunctionCalls[2] + _remainingWhaleFunctionCalls[3] + _remainingWhaleFunctionCalls[4]);
-    sealTokensLeft = (_remainingSealFunctionCalls[0] + _remainingSealFunctionCalls[1] + _remainingSealFunctionCalls[2] + _remainingSealFunctionCalls[3] + _remainingSealFunctionCalls[4]);
-    planktonTokensLeft = (_remainingPlanktonFunctionCalls[0] + _remainingPlanktonFunctionCalls[1] + _remainingPlanktonFunctionCalls[2] + _remainingPlanktonFunctionCalls[3] + _remainingPlanktonFunctionCalls[4]);
+    uint i;
+    uint whaleCalls = 0;
+    uint sealCalls = 0;
+    uint planktonCalls = 0;
+      
+    for(i = 0; i < _remainingWhaleFunctionCalls.length; i++){
+      whaleCalls = whaleCalls + _remainingWhaleFunctionCalls[i];
+      sealCalls = sealCalls + _remainingSealFunctionCalls[i];
+      planktonCalls = planktonCalls + _remainingPlanktonFunctionCalls[i];
+    }
     
-    totalWhaleTokenAmount = (_remainingWhaleFunctionCalls[0] + _remainingWhaleFunctionCalls[1] + _remainingWhaleFunctionCalls[2] + _remainingWhaleFunctionCalls[3] + _remainingWhaleFunctionCalls[4]);
-    totalSealTokenAmount = (_remainingSealFunctionCalls[0] + _remainingSealFunctionCalls[1] + _remainingSealFunctionCalls[2] + _remainingSealFunctionCalls[3] + _remainingSealFunctionCalls[4]);
-    totalPlanktonTokenAmount = (_remainingPlanktonFunctionCalls[0] + _remainingPlanktonFunctionCalls[1] + _remainingPlanktonFunctionCalls[2] + _remainingPlanktonFunctionCalls[3] + _remainingPlanktonFunctionCalls[4]); 
+    whaleTokensLeft = whaleCalls;
+    sealTokensLeft = sealCalls;
+    planktonTokensLeft = planktonCalls;
     
+    totalWhaleTokenAmount = whaleCalls;
+    totalSealTokenAmount = sealCalls;
+    totalPlanktonTokenAmount = planktonCalls;
     TokenIdsByMintType[MintType.Whale] = TokenIds(
         1,                              
         _remainingWhaleFunctionCalls[0],
@@ -117,8 +127,8 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
 
   _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
   
-  for (uint256 i=0; i < _artistAddresses.length; i++) {
-    _setupRole(ARTIST_ROLE, _artistAddresses[i]);
+  for (uint256 j=0; j < _artistAddresses.length; j++) {
+    _setupRole(ARTIST_ROLE, _artistAddresses[j]);
   }
     _setRoleAdmin(ARTIST_ROLE, ARTIST_ROLE);  
   
