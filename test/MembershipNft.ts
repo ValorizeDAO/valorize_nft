@@ -11,9 +11,6 @@ chai.use(solidity);
 const { expect } = chai;
 
 const INITIAL_URI = "https://token-cdn-domain/";
-// const REMAINING_WHALE_FUNCTION_CALLS = [3, 18, 50, 0, 0];
-// const REMAINING_SEAL_FUNCTION_CALLS = [53, 68, 125, 200, 0];
-// const REMAINING_PLANKTON_FUNCTION_CALLS = [203, 223, 375, 1300, 3000];
 
 const REMAINING_WHALE_FUNCTION_CALLS_V2 = [1, 2, 3, 0, 0];
 const REMAINING_SEAL_FUNCTION_CALLS_V2 = [1, 2, 3, 4, 0];
@@ -158,6 +155,18 @@ describe.only("ExposedMembershipNft", () => {
       await membershipNft.randomWhaleMint(overridesWhale);
       await expect(membershipNft.randomWhaleMint(overridesWhale)
       ).to.be.revertedWith("Whale NFTs are sold out");
+    });
+
+    it("reverts when too many NFTs have been minted per batch per rarity", async () => {
+      const overridesWhale = {value: ethers.utils.parseEther("1.0")}
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await membershipNft.randomWhaleMint(overridesWhale);
+      await expect(membershipNft.randomWhaleMint(overridesWhale)
+      ).to.be.revertedWith("Batch sold out");
     });
   });
 

@@ -1,3 +1,4 @@
+
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
@@ -6,13 +7,14 @@ import { IERC2981, IERC165 } from "@openzeppelin/contracts/interfaces/IERC2981.s
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-
 /**
 @title MembershipNft
 @author Marco Huberts & Javier Gonzalez
 @dev Implementation of a Membership Non Fungible Token using ERC721.
 */
+
 contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
+
 
     string public URI;
 
@@ -36,7 +38,6 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
 
     mapping(MintType => TokenIds) public TokenIdsByMintType;
 
-    enum Rarity { Mycelia, Obsidian, Diamond, Gold, Silver }
     enum MintType { Whale, Seal, Plankton }
 
     struct TokenIds {
@@ -66,7 +67,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     
     royaltyDistributorAddress = _royaltyDistributorAddress;
     artistAddresses = _artistAddresses;
-
+    
     whaleTokensLeft = (_remainingWhaleFunctionCalls[0] + _remainingWhaleFunctionCalls[1] + _remainingWhaleFunctionCalls[2] + _remainingWhaleFunctionCalls[3] + _remainingWhaleFunctionCalls[4]);
     sealTokensLeft = (_remainingSealFunctionCalls[0] + _remainingSealFunctionCalls[1] + _remainingSealFunctionCalls[2] + _remainingSealFunctionCalls[3] + _remainingSealFunctionCalls[4]);
     planktonTokensLeft = (_remainingPlanktonFunctionCalls[0] + _remainingPlanktonFunctionCalls[1] + _remainingPlanktonFunctionCalls[2] + _remainingPlanktonFunctionCalls[3] + _remainingPlanktonFunctionCalls[4]);
@@ -131,7 +132,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     return URI;
   }
 
-  function _setURI(string memory baseURI) public{
+  function _setURI(string memory baseURI) public {
     require(!frozen);
     URI = baseURI;
   }
