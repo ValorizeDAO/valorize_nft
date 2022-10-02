@@ -305,7 +305,10 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
       
       } else {
         return(royaltyDistributorAddress[(_tokenId % royaltyDistributorAddress.length)], royaltyAmount); 
-    }
+    } //tokenId URIs should be ordered: 
+      // 12 = royaltyDistributorAddress[0]
+      // 11 = royaltyDistributorAddress[11]
+      // 10 = royaltyDistributorAddress[10]
   }    
         //id
         // 1 = artistAddress[0]
