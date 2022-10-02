@@ -15,7 +15,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
 
-
     string public URI;
 
     uint256 public constant PRICE_PER_WHALE_TOKEN = 1.0 ether;
@@ -30,9 +29,13 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     uint256 public totalSealTokenAmount;
     uint256 public totalPlanktonTokenAmount;
 
+    uint256 whaleMyceliaAmount;
+    uint256 sealMyceliaAmount;
+    uint256 planktonMyceliaAmount;
+
     bool internal frozen = false;
 
-    address royaltyDistributorAddress;
+    address[] royaltyDistributorAddress;
     address[] artistAddresses;
     bytes32 public constant ARTIST_ROLE = keccak256("ARTIST_ROLE");
 
@@ -60,7 +63,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     uint256[] memory _remainingWhaleFunctionCalls, //  [3, 12, 35, 0, 0] // [3, 6, 9, 0, 0] //[1, 2, 3, 0, 0]
     uint256[] memory _remainingSealFunctionCalls, //   [3, 18, 40, 90, 0] // [3, 6, 9, 12, 0] // [1, 2, 3, 4, 0]
     uint256[] memory _remainingPlanktonFunctionCalls, //[4, 60, 125, 310, 2301] // [3, 6, 9, 12, 15] // [1, 2, 3, 4, 5]
-    address _royaltyDistributorAddress,
+    address[] memory _royaltyDistributorAddress,
     address[] memory _artistAddresses 
   ) ERC721("MEMBERSHIP", "VMEMB") {
     URI = _URI;
@@ -79,6 +82,10 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
       planktonCalls = planktonCalls + _remainingPlanktonFunctionCalls[i];
     }
     
+    whaleMyceliaAmount = _remainingWhaleFunctionCalls[0];
+    sealMyceliaAmount = _remainingSealFunctionCalls[0];
+    planktonMyceliaAmount = _remainingPlanktonFunctionCalls[0];
+
     whaleTokensLeft = whaleCalls;
     sealTokensLeft = sealCalls;
     planktonTokensLeft = planktonCalls;
@@ -86,6 +93,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     totalWhaleTokenAmount = whaleCalls;
     totalSealTokenAmount = sealCalls;
     totalPlanktonTokenAmount = planktonCalls;
+
     TokenIdsByMintType[MintType.Whale] = TokenIds(
         1,                              
         _remainingWhaleFunctionCalls[0],
@@ -284,13 +292,37 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
         address,
         uint256 royaltyAmount
     ) {
-        royaltyAmount = (_salePrice / 100) * 10;
-        if (_tokenId <= TokenIdsByMintType[MintType.Whale].endingMyceliaTokenId 
-        || (_tokenId > totalWhaleTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Seal].endingMyceliaTokenId) 
-        || (_tokenId > totalSealTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Plankton].endingMyceliaTokenId)) {
-            return(artistAddresses[(_tokenId-1)], royaltyAmount);
-        } else {
-          return(royaltyDistributorAddress, royaltyAmount); 
-        }
-    }    
+      royaltyAmount = (_salePrice / 100) * 10; 
+
+      if (_tokenId >= 1 && _tokenId <= TokenIdsByMintType[MintType.Whale].endingMyceliaTokenId) {
+        return(artistAddresses[(_tokenId-1)], royaltyAmount);  
+       
+      } else if (_tokenId > totalWhaleTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Seal].endingMyceliaTokenId) {
+          return(artistAddresses[(_tokenId-totalWhaleTokenAmount-1+whaleMyceliaAmount)], royaltyAmount);
+         
+      } else if ((_tokenId > totalSealTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Plankton].endingMyceliaTokenId)) {
+          return(artistAddresses[(_tokenId-(totalSealTokenAmount+totalWhaleTokenAmount)-1+(whaleMyceliaAmount+sealMyceliaAmount))], royaltyAmount);
+      
+      } else {
+        return(royaltyDistributorAddress[(_tokenId % royaltyDistributorAddress.length)], royaltyAmount); 
+    }
+  }    
+        //id
+        // 1 = artistAddress[0]
+        // 2 = artistAddress[1]
+        // 3 = artistAddress[2]
+        // 51 = artistAddress[3]
+        // 52 = artistAddress[4]
+        // 53 = artistAddress[5]
+        // 201 = artistAddress[6]
+        // 202 = artistAddress[7]
+        // 203 = artistAddress[8]
+        // 204 = artistAddress[9]
+
+        //put the addresses of the artists 
+        //use modulo by 12 for token Id 
+        // tokenId = 120
+        // artists = [1,2,3,4,5,6,7,8,9,10,11,12]
+        // artist = artists[tokenId % 12] => 10
+        //12 royaltyDistributorAddresses
 }
