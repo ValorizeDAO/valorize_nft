@@ -48,25 +48,25 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     enum MintType { Whale, Seal, Plankton }
 
     struct TokenIds {
-      uint256 startingMycelia;
-      uint256 endingMycelia;
-      uint256 startingObsidian;
-      uint256 endingObsidian;
-      uint256 startingDiamond;
-      uint256 endingDiamond;
-      uint256 startingGold;
-      uint256 endingGold;
-      uint256 startingSilver;
-      uint256 endingSilver;
+      uint256 startingMyceliaTokenId;
+      uint256 endingMyceliaTokenId;
+      uint256 startingObsidianTokenId;
+      uint256 endingObsidianTokenId;
+      uint256 startingDiamondTokenId;
+      uint256 endingDiamondTokenId;
+      uint256 startingGoldTokenId;
+      uint256 endingGoldTokenId;
+      uint256 startingSilverTokenId;
+      uint256 endingSilverTokenId;
     }
 
   event MintedTokenInfo(uint256 tokenId, string rarity);
 
   constructor(
     string memory _URI,
-    uint256[] memory _remainingWhaleFunctionCalls, //  [3, 12, 35, 0, 0] // [3, 6, 9, 0, 0] //[1, 2, 3, 0, 0]
-    uint256[] memory _remainingSealFunctionCalls, //   [3, 18, 40, 90, 0] // [3, 6, 9, 12, 0] // [1, 2, 3, 4, 0]
-    uint256[] memory _remainingPlanktonFunctionCalls, //[4, 60, 125, 310, 2301] // [3, 6, 9, 12, 15] // [1, 2, 3, 4, 5]
+    uint256[5] memory _remainingWhaleFunctionCalls, //  [3, 12, 35, 0, 0] // [3, 6, 9, 0, 0] //[1, 2, 3, 0, 0]
+    uint256[5] memory _remainingSealFunctionCalls, //   [3, 18, 40, 90, 0] // [3, 6, 9, 12, 0] // [1, 2, 3, 4, 0]
+    uint256[5] memory _remainingPlanktonFunctionCalls, //[4, 60, 125, 310, 2301] // [3, 6, 9, 12, 15] // [1, 2, 3, 4, 5]
     address[] memory _royaltyDistributorAddress,
     address[] memory _artistAddresses 
   ) ERC721("MEMBERSHIP", "VMEMB") {
@@ -98,17 +98,17 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     totalSealTokenAmount = sealCalls;
     totalPlanktonTokenAmount = planktonCalls; 
     
-    TokenIdsByMintType[MintType.Whale] = TokenIds(
+TokenIdsByMintType[MintType.Whale] = TokenIds(
         1,                              
         _remainingWhaleFunctionCalls[0],
         _remainingWhaleFunctionCalls[0] + 1,
         _remainingWhaleFunctionCalls[0] + _remainingWhaleFunctionCalls[1],
         _remainingWhaleFunctionCalls[0] + _remainingWhaleFunctionCalls[1] + 1,
-        _remainingWhaleFunctionCalls[0] + _remainingWhaleFunctionCalls[1] + _remainingWhaleFunctionCalls[2],//6
-        0,
-        0,
-        0,
-        0
+        _remainingWhaleFunctionCalls[0] + _remainingWhaleFunctionCalls[1] + _remainingWhaleFunctionCalls[2],
+        _remainingWhaleFunctionCalls[3],
+        _remainingWhaleFunctionCalls[3],
+        _remainingWhaleFunctionCalls[4],
+        _remainingWhaleFunctionCalls[4]
     );
 
     TokenIdsByMintType[MintType.Seal] = TokenIds(
@@ -120,8 +120,8 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
         totalWhaleTokenAmount + _remainingSealFunctionCalls[0] + _remainingSealFunctionCalls[1] + _remainingSealFunctionCalls[2],
         totalWhaleTokenAmount + _remainingSealFunctionCalls[0] + _remainingSealFunctionCalls[1] + _remainingSealFunctionCalls[2] + 1,
         totalWhaleTokenAmount + _remainingSealFunctionCalls[0] + _remainingSealFunctionCalls[1] + _remainingSealFunctionCalls[2] + _remainingSealFunctionCalls[3],
-        0,
-        0
+        totalWhaleTokenAmount + _remainingSealFunctionCalls[4],
+        totalWhaleTokenAmount + _remainingSealFunctionCalls[4]
     );
 
     TokenIdsByMintType[MintType.Plankton] = TokenIds(
@@ -204,131 +204,90 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     randomNumber = (block.difficulty + i) % totalTokenAmount + 1;
   }
  
-  /**
-  *@dev This function determines which rarity should be minted based on the random number.
-  *@param randomNumber is the number received from _getRandomNumber.
-  *@param mintType is the mint type which determines which predefined set of 
-  *     token Ids will be minted (see constructor).   
-  */
   function _mintFromRandomNumber(uint256 randomNumber, MintType mintType) internal {
-    if (randomNumber <= TokenIdsByMintType[mintType].endingMycelia) {     
+    if (randomNumber <= TokenIdsByMintType[mintType].endingMyceliaTokenId) {     
+
       _myceliaMint(mintType);
 
-    } else if (randomNumber <= TokenIdsByMintType[mintType].endingObsidian) {
+    } else if (randomNumber <= TokenIdsByMintType[mintType].endingObsidianTokenId) {
       _obsidianMint(mintType);
 
-    } else if (randomNumber <= TokenIdsByMintType[mintType].endingDiamond) {
+    } else if (randomNumber <= TokenIdsByMintType[mintType].endingDiamondTokenId) {
       _diamondMint(mintType);
 
-    } else if (randomNumber <= TokenIdsByMintType[mintType].endingGold) {
+    } else if (randomNumber <= TokenIdsByMintType[mintType].endingGoldTokenId) {
       _goldMint(mintType);
       
-    } else if (randomNumber <= TokenIdsByMintType[mintType].endingSilver) {
+    } else if (randomNumber <= TokenIdsByMintType[mintType].endingSilverTokenId) {
       _silverMint();
     }
   }
 
-  /**
-  *@dev This mints a mycelia NFT when the startingMycelia is lower than the endingMycelia
-  *     After mint, the startingMycelia will increase by 1.
-  *     If startingMycelia is higher than endingMycelia the Obsidian rarity will be minted.
-  *@param mintType is the mint type which determines which predefined set of 
-  *     token Ids will be minted (see constructor).   
-  */
   function _myceliaMint(MintType mintType) internal { 
-    if (TokenIdsByMintType[mintType].startingMycelia > TokenIdsByMintType[mintType].endingMycelia) {
-      _mintFromRandomNumber((TokenIdsByMintType[mintType].startingObsidian), mintType);
+
+    if (TokenIdsByMintType[mintType].startingMyceliaTokenId > TokenIdsByMintType[mintType].endingMyceliaTokenId) {
+      _mintFromRandomNumber((TokenIdsByMintType[mintType].startingObsidianTokenId), mintType);
     
     } else {
-      _safeMint(msg.sender, TokenIdsByMintType[mintType].startingMycelia);
-      emit MintedTokenInfo(TokenIdsByMintType[mintType].startingMycelia, "Mycelia");
-      RarityByTokenId[TokenIdsByMintType[mintType].startingMycelia] = "Mycelia";
-      TokenIdsByMintType[mintType].startingMycelia++;
+      _safeMint(msg.sender, TokenIdsByMintType[mintType].startingMyceliaTokenId);
+      emit MintedTokenInfo(TokenIdsByMintType[mintType].startingMyceliaTokenId, "Mycelia");
+      TokenIdsByMintType[mintType].startingMyceliaTokenId++;
     }
   }
-  /**
-  *@dev This mints an obsidian NFT when the startingObsidian is lower than the endingObsidian
-  *     After mint, the startingObsidian will increase by 1.
-  *     If startingObsidian is higher than endingObsidian the Diamond rarity will be minted.
-  *@param mintType is the mint type which determines which predefined set of 
-  *     token Ids will be minted (see constructor).   
-  */
+
   function _obsidianMint(MintType mintType) internal {
-    if (TokenIdsByMintType[mintType].startingObsidian > TokenIdsByMintType[mintType].endingObsidian) {
-      _mintFromRandomNumber(TokenIdsByMintType[mintType].startingDiamond, mintType);
+    if (TokenIdsByMintType[mintType].startingObsidianTokenId > TokenIdsByMintType[mintType].endingObsidianTokenId) {
+      _mintFromRandomNumber(TokenIdsByMintType[mintType].startingDiamondTokenId, mintType);
     
     } else {
-      _safeMint(msg.sender, TokenIdsByMintType[mintType].startingObsidian);
-      emit MintedTokenInfo(TokenIdsByMintType[mintType].startingObsidian, "Obsidian");
-      RarityByTokenId[TokenIdsByMintType[mintType].startingObsidian] = "Obsidian";
-      TokenIdsByMintType[mintType].startingObsidian++;
+      _safeMint(msg.sender, TokenIdsByMintType[mintType].startingObsidianTokenId);
+      emit MintedTokenInfo(TokenIdsByMintType[mintType].startingObsidianTokenId, "Obsidian");
+      TokenIdsByMintType[mintType].startingObsidianTokenId++;
     }
   }
-  /**
-  *@dev This mints a diamond NFT when the startingDiamond is lower than the endingDiamond
-  *     In other words, a diamond NFT will be minted when there are still diamond NFTs available.
-  *     After mint, the startingDiamond will increase by 1.
-  *     If startingDiamond from mint type whale is higher than endingDiamond from mint type whale
-  *     then startingMycelia (or startingObsidian) will be minted.
-  *     If startingDiamond is higher than endingDiamond the Gold rarity will be minted.
-  *@param mintType is the mint type which determines which predefined set of 
-  *     token Ids will be minted (see constructor).   
-  */
-  function _diamondMint(MintType mintType) internal {
-    if (TokenIdsByMintType[MintType.Whale].startingDiamond > TokenIdsByMintType[MintType.Whale].endingDiamond) {
-      _mintFromRandomNumber(TokenIdsByMintType[MintType.Whale].startingMycelia, MintType.Whale);
-    
-    } else if(TokenIdsByMintType[mintType].startingDiamond > TokenIdsByMintType[mintType].endingDiamond) {
-      _mintFromRandomNumber(TokenIdsByMintType[mintType].startingGold, mintType);
+
+  function _diamondMint(MintType mintType) internal { 
+    if (
+      mintType == MintType.Whale && 
+      TokenIdsByMintType[MintType.Whale].startingDiamondTokenId > TokenIdsByMintType[MintType.Whale].endingDiamondTokenId
+    ) {
+      _mintFromRandomNumber(TokenIdsByMintType[MintType.Whale].startingMyceliaTokenId, MintType.Whale);
+    } else if(TokenIdsByMintType[mintType].startingDiamondTokenId > TokenIdsByMintType[mintType].endingDiamondTokenId) {
+      _mintFromRandomNumber(TokenIdsByMintType[mintType].startingGoldTokenId, mintType);
     
     } else {
-      _safeMint(msg.sender, TokenIdsByMintType[mintType].startingDiamond);
-      emit MintedTokenInfo(TokenIdsByMintType[mintType].startingDiamond, "Diamond");
-      RarityByTokenId[TokenIdsByMintType[mintType].startingDiamond] = "Diamond";
-      TokenIdsByMintType[mintType].startingDiamond++;
+      _safeMint(msg.sender, TokenIdsByMintType[mintType].startingDiamondTokenId);
+      emit MintedTokenInfo(TokenIdsByMintType[mintType].startingDiamondTokenId, "Diamond");
+      TokenIdsByMintType[mintType].startingDiamondTokenId++;
     }
   } 
 
-  /**
-  *@dev This mints a gold NFT when the startingGold is lower than the endingGold
-  *     After mint, the startingGold will increase by 1.
-  *     If startingGold from mint type seal is higher than endingGold from mint type seal
-  *     then startingMycelia (or higher rarity) should be minted.
-  *     If startingGold from mint type plankton is higher than endingGold from mint type plankton
-  *     then the startingSilver should be minted.
-  *@param mintType is the mint type which determines which predefined set of 
-  *     token Ids will be minted (see constructor).   
-  */
   function _goldMint(MintType mintType) internal {
-    if (TokenIdsByMintType[MintType.Plankton].startingGold > TokenIdsByMintType[MintType.Plankton].endingGold) {
-      _mintFromRandomNumber(TokenIdsByMintType[mintType].startingSilver, mintType);
-    
-    } else if(TokenIdsByMintType[MintType.Seal].startingGold > TokenIdsByMintType[MintType.Seal].endingGold) {
-      _mintFromRandomNumber(TokenIdsByMintType[MintType.Seal].startingMycelia, MintType.Seal);
+    if (
+      mintType == MintType.Plankton &&
+      TokenIdsByMintType[MintType.Plankton].startingGoldTokenId > TokenIdsByMintType[MintType.Plankton].endingGoldTokenId) {
+      _mintFromRandomNumber(TokenIdsByMintType[mintType].startingGoldTokenId+1, mintType);
+      
+    } else if(
+      mintType == MintType.Seal &&
+      TokenIdsByMintType[MintType.Seal].startingGoldTokenId > TokenIdsByMintType[MintType.Seal].endingGoldTokenId) {
+      _mintFromRandomNumber(TokenIdsByMintType[MintType.Seal].startingMyceliaTokenId, MintType.Seal);
     
     } else {
-      _safeMint(msg.sender, TokenIdsByMintType[mintType].startingGold);
-      emit MintedTokenInfo(TokenIdsByMintType[mintType].startingGold, "Gold");
-      RarityByTokenId[TokenIdsByMintType[mintType].startingGold] = "Gold";
-      TokenIdsByMintType[mintType].startingGold++;
+      _safeMint(msg.sender, TokenIdsByMintType[mintType].startingGoldTokenId);
+      emit MintedTokenInfo(TokenIdsByMintType[mintType].startingGoldTokenId, "Gold");
+      TokenIdsByMintType[mintType].startingGoldTokenId++;
     }
   }
 
-  /**
-  *@dev This mints a silver NFT only for mint type plankton when the startingSilver is lower than the endingSilver
-  *     After mint, the startingSilver will increase by 1.
-  *     If startingSilver from mint type plankton is higher than endingSilver from mint type plankton
-  *     then startingMycelia (or higher rarity) should be minted. 
-  */
   function _silverMint() internal {
-    if(TokenIdsByMintType[MintType.Plankton].startingSilver > TokenIdsByMintType[MintType.Plankton].endingSilver) {
-      _mintFromRandomNumber(TokenIdsByMintType[MintType.Plankton].startingMycelia, MintType.Plankton);
+    if(TokenIdsByMintType[MintType.Plankton].startingSilverTokenId > TokenIdsByMintType[MintType.Plankton].endingSilverTokenId) {
+      _mintFromRandomNumber(TokenIdsByMintType[MintType.Plankton].startingMyceliaTokenId, MintType.Plankton);
     
     } else {
-      _safeMint(msg.sender, TokenIdsByMintType[MintType.Plankton].startingSilver);
-      emit MintedTokenInfo(TokenIdsByMintType[MintType.Plankton].startingSilver, "Silver");
-      RarityByTokenId[TokenIdsByMintType[MintType.Plankton].startingSilver] = "Silver";
-      TokenIdsByMintType[MintType.Plankton].startingSilver++;
+      _safeMint(msg.sender, TokenIdsByMintType[MintType.Plankton].startingSilverTokenId);
+      emit MintedTokenInfo(TokenIdsByMintType[MintType.Plankton].startingSilverTokenId, "Silver");
+      TokenIdsByMintType[MintType.Plankton].startingSilverTokenId++;
     }
   } 
 
@@ -383,13 +342,13 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     ) {
       royaltyAmount = (_salePrice / 100) * 10; 
 
-      if (_tokenId >= 1 && _tokenId <= TokenIdsByMintType[MintType.Whale].endingMycelia) {
+      if (_tokenId >= 1 && _tokenId <= TokenIdsByMintType[MintType.Whale].endingMyceliaTokenId) {
         return(artistAddresses[(_tokenId-1)], royaltyAmount);  
        
-      } else if (_tokenId > totalWhaleTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Seal].endingMycelia) {
+      } else if (_tokenId > totalWhaleTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Seal].endingMyceliaTokenId) {
           return(artistAddresses[(_tokenId-totalWhaleTokenAmount-1+whaleMyceliaAmount)], royaltyAmount);
          
-      } else if ((_tokenId > totalSealTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Plankton].endingMycelia)) {
+      } else if ((_tokenId > totalSealTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Plankton].endingMyceliaTokenId)) {
           return(artistAddresses[(_tokenId-(totalSealTokenAmount+totalWhaleTokenAmount)-1+(whaleMyceliaAmount+sealMyceliaAmount))], royaltyAmount);
       
       } else {
