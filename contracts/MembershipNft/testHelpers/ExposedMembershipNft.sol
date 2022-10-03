@@ -12,16 +12,16 @@ import "../MembershipNft.sol";
 contract ExposedMembershipNft is MembershipNft {
     constructor(
     string memory _URI,
-    uint256[] memory _remainingWhaleFunctionCalls,
-    uint256[] memory _remainingSealFunctionCalls, 
-    uint256[] memory _remainingPlanktonFunctionCalls,
-    address _royaltyDistributorAddress,
+    uint256[] memory _whaleCalls,
+    uint256[] memory _sealCalls, 
+    uint256[] memory _planktonCalls,
+    address[] memory _royaltyDistributorAddresses,
     address[] memory _artistAddresses
     ) MembershipNft(_URI,
-    _remainingWhaleFunctionCalls,
-    _remainingSealFunctionCalls,
-    _remainingPlanktonFunctionCalls,
-    _royaltyDistributorAddress,
+    _whaleCalls,
+    _sealCalls,
+    _planktonCalls,
+    _royaltyDistributorAddresses,
     _artistAddresses) {}
 
 
