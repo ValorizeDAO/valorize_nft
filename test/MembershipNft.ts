@@ -135,13 +135,13 @@ describe.only("ExposedMembershipNft", () => {
 
     it("withdraws ether stored in contract", async() => {
       await membershipNft.setTokensToMintPerRarity(5, "whale");
-      const overridesWhale = {value: ethers.utils.parseEther("1.5")}
+      const overridesWhale = {value: ethers.utils.parseEther("1.0")}
       await membershipNft.randomWhaleMint(overridesWhale);
       const balanceContractAfterMint = await membershipNft.provider.getBalance(membershipNft.address);
       await membershipNft.connect(deployer).withdrawEther();
       const provider = ethers.provider;
       const balanceContractAfterWithdrawal = await membershipNft.provider.getBalance(membershipNft.address);
-      expect(balanceContractAfterMint).to.equal(ethers.utils.parseEther("1.5"))
+      expect(balanceContractAfterMint).to.equal(ethers.utils.parseEther("1.0"))
       expect(balanceContractAfterWithdrawal).to.equal(ethers.utils.parseEther("0"));
     });
   });

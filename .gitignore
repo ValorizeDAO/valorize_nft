@@ -20,4 +20,5 @@ ProductNft.ts
 ProductNft
 membershipV2.sol
 membership_nft_renders
-
+generateMetaDataProduct.js
+generateMetaDataMembership.js
