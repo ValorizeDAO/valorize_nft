@@ -168,7 +168,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
   }
   
   function setTokenPrice() internal {
-    PRICE_PER_WHALE_TOKEN = 1.5 ether;
+    PRICE_PER_WHALE_TOKEN = 1.0 ether;
     PRICE_PER_SEAL_TOKEN = 0.2 ether;
     PRICE_PER_PLANKTON_TOKEN = 0.1 ether;
   }
@@ -247,6 +247,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     } else {
       _safeMint(msg.sender, TokenIdsByMintType[mintType].startingMycelia);
       emit MintedTokenInfo(TokenIdsByMintType[mintType].startingMycelia, "Mycelia");
+      RarityByTokenId[TokenIdsByMintType[mintType].startingMycelia] = "Mycelia";
       TokenIdsByMintType[mintType].startingMycelia++;
     }
   }
@@ -265,6 +266,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     } else {
       _safeMint(msg.sender, TokenIdsByMintType[mintType].startingObsidian);
       emit MintedTokenInfo(TokenIdsByMintType[mintType].startingObsidian, "Obsidian");
+      RarityByTokenId[TokenIdsByMintType[mintType].startingObsidian] = "Obsidian";
       TokenIdsByMintType[mintType].startingObsidian++;
     }
   }
@@ -290,6 +292,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     } else {
       _safeMint(msg.sender, TokenIdsByMintType[mintType].startingDiamond);
       emit MintedTokenInfo(TokenIdsByMintType[mintType].startingDiamond, "Diamond");
+      RarityByTokenId[TokenIdsByMintType[mintType].startingDiamond] = "Diamond";
       TokenIdsByMintType[mintType].startingDiamond++;
     }
   }
@@ -318,6 +321,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     } else {
       _safeMint(msg.sender, TokenIdsByMintType[mintType].startingGold);
       emit MintedTokenInfo(TokenIdsByMintType[mintType].startingGold, "Gold");
+      RarityByTokenId[TokenIdsByMintType[mintType].startingGold] = "Gold";
       TokenIdsByMintType[mintType].startingGold++;
     }
   }
@@ -335,6 +339,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     } else {
       _safeMint(msg.sender, TokenIdsByMintType[MintType.Plankton].startingSilver);
       emit MintedTokenInfo(TokenIdsByMintType[MintType.Plankton].startingSilver, "Silver");
+      RarityByTokenId[TokenIdsByMintType[MintType.Plankton].startingSilver] = "Silver";
       TokenIdsByMintType[MintType.Plankton].startingSilver++;
     }
   } 
