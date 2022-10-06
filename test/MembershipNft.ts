@@ -103,7 +103,7 @@ describe.only("ExposedMembershipNft", () => {
       await membershipNft.setTokensToMintPerRarity(5, "whale");
       const whaleMintType = 0;
       const whaleMyceliaId = await (await membershipNft.TokenIdsByMintType(whaleMintType)).startingMycelia;
-      const myceliaWhaleMint = await membershipNft.mintFromRandomNumber(whaleMyceliaId, whaleMintType); 
+      const myceliaWhaleMint = await membershipNft.mintFromDeterminant(whaleMyceliaId, whaleMintType); 
       expect(myceliaWhaleMint).to.emit(membershipNft, "MintedTokenInfo").withArgs(
         whaleMyceliaId, "Mycelia",
       );
@@ -113,7 +113,7 @@ describe.only("ExposedMembershipNft", () => {
       await membershipNft.setTokensToMintPerRarity(5, "seal");
       const sealMintType = 1;
       const sealObsidianId = await (await membershipNft.TokenIdsByMintType(sealMintType)).startingObsidian;
-      const obsidianSealMint = await membershipNft.mintFromRandomNumber(sealObsidianId, sealMintType); 
+      const obsidianSealMint = await membershipNft.mintFromDeterminant(sealObsidianId, sealMintType); 
       expect(obsidianSealMint).to.emit(membershipNft, "MintedTokenInfo").withArgs(
         sealObsidianId, "Obsidian",
       );
@@ -123,7 +123,7 @@ describe.only("ExposedMembershipNft", () => {
       await membershipNft.setTokensToMintPerRarity(5, "plankton");
       const planktonMintType = 2;
       const planktonGoldId = await (await membershipNft.TokenIdsByMintType(planktonMintType)).startingGold;
-      const obsidianSealMint = await membershipNft.mintFromRandomNumber(planktonGoldId, planktonMintType); 
+      const obsidianSealMint = await membershipNft.mintFromDeterminant(planktonGoldId, planktonMintType); 
       expect(obsidianSealMint).to.emit(membershipNft, "MintedTokenInfo").withArgs(
         planktonGoldId, "Gold",
       );
@@ -201,9 +201,9 @@ describe.only("ExposedMembershipNft", () => {
       const whaleMyceliaId = await (await membershipNft.TokenIdsByMintType(0)).startingMycelia;
       const sealDiamondId = await (await membershipNft.TokenIdsByMintType(1)).startingDiamond;
       const planktonSilverId = await (await membershipNft.TokenIdsByMintType(2)).startingSilver;
-      await membershipNft.mintFromRandomNumber(whaleMyceliaId, 0);
-      await membershipNft.mintFromRandomNumber(sealDiamondId, 1);
-      await membershipNft.mintFromRandomNumber(planktonSilverId, 2);
+      await membershipNft.mintFromDeterminant(whaleMyceliaId, 0);
+      await membershipNft.mintFromDeterminant(sealDiamondId, 1);
+      await membershipNft.mintFromDeterminant(planktonSilverId, 2);
       const findTokenURIWhale = await membershipNft.tokenURI(whaleMyceliaId);
       const findTokenURISeal = await membershipNft.tokenURI(sealDiamondId);
       const findTokenURIPlankton = await membershipNft.tokenURI(planktonSilverId);
@@ -213,19 +213,45 @@ describe.only("ExposedMembershipNft", () => {
     });
   });
 
-  describe("store rarities in mapping and return rarity when token Id is given", async() => {
+  describe("Return rarity when token Id is given", async() => {
     beforeEach(setupMembershipNft)
 
     it("sets the rarity per token id after mint - Mycelia", async() => {
       await membershipNft.myceliaMint(0);
-      const rarity = await membershipNft.RarityByTokenId(1);
+      const rarity = await membershipNft.rarityByTokenId(1);
       expect(rarity).to.equal("Mycelia");
     });
 
     it("sets the rarity per token id after mint - Diamond", async() => {
       await membershipNft.diamondMint(0);
-      const rarity = await membershipNft.RarityByTokenId(4);
+      const rarity = await membershipNft.rarityByTokenId(4);
       expect(rarity).to.equal("Diamond");
     });
   });
+
+  describe("Updating of royalty receiver address by artists", async () => {
+    beforeEach(setupMembershipNft)
+
+    it("updates the royalty receiving address", async () => {
+      const addressOld = await addresses[5].getAddress();
+      const addressNew = await addresses[7].getAddress();
+      const updateRoyaltyReceiver = await membershipNft.connect(addresses[5]
+        ).updateRoyaltyRecepient(addressOld, addressNew);
+      expect(updateRoyaltyReceiver).to.emit(membershipNft, "RecipientUpdated").withArgs(
+        addressOld, addressNew
+      );
+    });
+
+    it("fails when the previousReceiver does not have a role", async () => {
+      const randomAddress = await addresses[9].getAddress();
+      const addressNew = await addresses[2].getAddress();
+      expect(membershipNft.updateRoyaltyRecepient(randomAddress, addressNew)
+      ).to.be.revertedWith("Incorrect address");
+    });
+
+    it("fails when the role name cannot be retrieved", async () => {
+      const inquiredAddress = await addresses[5].getAddress();
+      expect(membershipNft.getRoleName(inquiredAddress)).to.be.revertedWith("Incorrect address");
+    });
+  })
 });

@@ -29,8 +29,8 @@ contract ExposedMembershipNft is MembershipNft {
         return _getRandomNumber(totalTokenAmount);
     }
 
-    function mintFromRandomNumber(uint256 randomNumber, MintType mintType) external {
-        return _mintFromRandomNumber(randomNumber, mintType);
+    function mintFromDeterminant(uint256 determinant, MintType mintType) external {
+        return _mintFromDeterminant(determinant, mintType);
     }
 
     function myceliaMint(MintType mintType) external {
