@@ -42,6 +42,10 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
       accounts: [process.env.DEPLOY_ACCOUNT_PRIVKEY]
     },
+    goerli: {
+      url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [process.env.DEPLOY_ACCOUNT_PRIVKEY]
+    },
     ropsten: {
       url: `https://ropsten.infura.io/v3/${process.env.INFURA_KEY}`,
       accounts: [process.env.DEPLOY_ACCOUNT_PRIVKEY]
@@ -58,6 +62,7 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   etherscan: {
     apiKey: {
         mainnet: process.env.ETHERSCAN_API_KEY,
+        goerli: process.env.ETHERSCAN_API_KEY,
         ropsten: process.env.ETHERSCAN_API_KEY,
         arbitrumOne: process.env.ARBISCAN_API_KEY,
         polygon: process.env.POLYGONSCAN_API_KEY,

@@ -375,6 +375,10 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
       planktonTokensLeft--;
   }
 
+  /**
+  *@dev Returns the rarity of a token Id.
+  *@param _tokenId the id of the token of interest.
+  */
   function rarityByTokenId(uint256 _tokenId) external view returns (string memory) {
     if ((_tokenId >= 1 && _tokenId <= TokenIdsByMintType[MintType.Whale].endingMycelia) 
     || (_tokenId > totalWhaleTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Seal].endingMycelia)
@@ -401,7 +405,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
     }
   }
 
-    /**
+  /**
   *@dev Using this function a role name is returned if the inquired 
   *     address is present in the royaltyReceivers array
   *@param inquired is the address used to find the role name
@@ -429,7 +433,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, SlowMintable, Reentra
         return;
       }
     }
-    revert("Incorrect address");
+    revert("Incorrect address for previous recipient");
   } 
 
   /**

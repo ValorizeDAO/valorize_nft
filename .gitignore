@@ -10,15 +10,9 @@ build
 contracts/@*
 .env
 contracts-exposed
+membership_nft_renders
 product_nft_renders
 product_nft_metadata
-arguments.js
-fetchServerFile.js
-createAndUploadMetadata.js
-viewSpaceFiles.js
-ProductNft.ts
-ProductNft
-membershipV2.sol
-membership_nft_renders
+scripts
 generateMetaDataProduct.js
 generateMetaDataMembership.js

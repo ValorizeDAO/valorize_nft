@@ -45,7 +45,6 @@ describe.only("ExposedMembershipNft", () => {
     await membershipNft.deployed();
   };
 
-
   describe("Deployment", async () => {
     beforeEach(setupMembershipNft)
 
@@ -60,8 +59,7 @@ describe.only("ExposedMembershipNft", () => {
     it("mints three plankton NFTs upon deployment", async() => {
       const tokensLeft = await membershipNft.planktonTokensLeft();
       const totalAmount = await membershipNft.totalPlanktonTokenAmount()
-      expect(totalAmount).to.equal(tokensLeft.add(3));
-      
+      expect(totalAmount).to.equal(tokensLeft.add(3)); 
     })
   });
 
@@ -246,7 +244,7 @@ describe.only("ExposedMembershipNft", () => {
       const randomAddress = await addresses[9].getAddress();
       const addressNew = await addresses[2].getAddress();
       expect(membershipNft.updateRoyaltyRecepient(randomAddress, addressNew)
-      ).to.be.revertedWith("Incorrect address");
+      ).to.be.revertedWith("Incorrect address for previous recipient");
     });
 
     it("fails when the role name cannot be retrieved", async () => {
