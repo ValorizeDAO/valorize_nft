@@ -11,9 +11,9 @@ chai.use(solidity);
 const { expect } = chai;
 
 const INITIAL_URI = "https://token-cdn-domain/";
-const REMAINING_WHALE_FUNCTION_CALLS = [3, 18, 50, 0, 0];
-const REMAINING_SEAL_FUNCTION_CALLS = [53, 68, 125, 200, 0];
-const REMAINING_PLANKTON_FUNCTION_CALLS = [203, 223, 375, 1300, 3000];
+const REMAINING_WHALE_FUNCTION_CALLS = [4, 20, 30, 0, 0];
+const REMAINING_SEAL_FUNCTION_CALLS = [5, 20, 30, 95, 0];
+const REMAINING_PLANKTON_FUNCTION_CALLS = [3, 20, 180, 625, 1200];
 
 const REMAINING_WHALE_FUNCTION_CALLS_V2 = [1, 2, 3, 0, 0];
 const REMAINING_SEAL_FUNCTION_CALLS_V2 = [1, 2, 3, 4, 0];
@@ -31,9 +31,9 @@ describe.only("ExposedMembershipNft", () => {
     [deployer, admin1, admin2, vault, ...addresses] = await ethers.getSigners();
     membershipNft = await new ExposedMembershipNftFactory(deployer).deploy(
       INITIAL_URI,
-      REMAINING_WHALE_FUNCTION_CALLS_V2, 
-      REMAINING_SEAL_FUNCTION_CALLS_V2, 
-      REMAINING_PLANKTON_FUNCTION_CALLS_V2,
+      REMAINING_WHALE_FUNCTION_CALLS, 
+      REMAINING_SEAL_FUNCTION_CALLS, 
+      REMAINING_PLANKTON_FUNCTION_CALLS,
       [await addresses[0].getAddress(), 
        await addresses[6].getAddress()], 
       [await addresses[1].getAddress(), 
@@ -59,7 +59,7 @@ describe.only("ExposedMembershipNft", () => {
     it("mints three plankton NFTs upon deployment", async() => {
       const tokensLeft = await membershipNft.planktonTokensLeft();
       const totalAmount = await membershipNft.totalPlanktonTokenAmount()
-      expect(totalAmount).to.equal(tokensLeft.add(3)); 
+      expect(totalAmount).to.equal(tokensLeft.add(10)); 
     })
   });
 
@@ -67,7 +67,6 @@ describe.only("ExposedMembershipNft", () => {
     beforeEach(setupMembershipNft)
 
     it("mints a random whale NFT", async () => {
-      await membershipNft.setTokensToMintPerRarity(5, "whale");
       const overridesWhale = {value: ethers.utils.parseEther("1.0")}
       const leftBeforeMint = await membershipNft.whaleTokensLeft();
       await membershipNft.randomWhaleMint(overridesWhale);
@@ -76,7 +75,6 @@ describe.only("ExposedMembershipNft", () => {
     });
 
     it("mints a random seal NFT", async () => {
-      await membershipNft.setTokensToMintPerRarity(5, "seal");
       const overridesSeal = {value: ethers.utils.parseEther("0.2")}
       const leftBeforeMint = await membershipNft.sealTokensLeft();;
       await membershipNft.randomSealMint(overridesSeal);
@@ -85,7 +83,6 @@ describe.only("ExposedMembershipNft", () => {
     });
 
     it("mints a random plankton NFT", async () => {
-      await membershipNft.setTokensToMintPerRarity(5, "plankton");
       const overridesPlankton = {value: ethers.utils.parseEther("0.1")}
       const leftBeforeMint = await membershipNft.planktonTokensLeft();
       await membershipNft.randomPlanktonMint(overridesPlankton);
@@ -98,7 +95,6 @@ describe.only("ExposedMembershipNft", () => {
     beforeEach(setupMembershipNft)
 
     it("mints a whale mycelia NFT using a random number lower than ending Mycelia token Id", async () => {
-      await membershipNft.setTokensToMintPerRarity(5, "whale");
       const whaleMintType = 0;
       const whaleMyceliaId = await (await membershipNft.TokenIdsByMintType(whaleMintType)).startingMycelia;
       const myceliaWhaleMint = await membershipNft.mintFromDeterminant(whaleMyceliaId, whaleMintType); 
@@ -108,7 +104,6 @@ describe.only("ExposedMembershipNft", () => {
     });
     
     it("mints a seal obsidian NFT using a random number lower than ending Obsidian token Id", async () => {
-      await membershipNft.setTokensToMintPerRarity(5, "seal");
       const sealMintType = 1;
       const sealObsidianId = await (await membershipNft.TokenIdsByMintType(sealMintType)).startingObsidian;
       const obsidianSealMint = await membershipNft.mintFromDeterminant(sealObsidianId, sealMintType); 
@@ -118,7 +113,6 @@ describe.only("ExposedMembershipNft", () => {
     });
 
     it("mints a plankton Gold NFT using a random number lower than ending Gold token Id", async () => {
-      await membershipNft.setTokensToMintPerRarity(5, "plankton");
       const planktonMintType = 2;
       const planktonGoldId = await (await membershipNft.TokenIdsByMintType(planktonMintType)).startingGold;
       const obsidianSealMint = await membershipNft.mintFromDeterminant(planktonGoldId, planktonMintType); 
@@ -132,14 +126,13 @@ describe.only("ExposedMembershipNft", () => {
     beforeEach(setupMembershipNft)
 
     it("withdraws ether stored in contract", async() => {
-      await membershipNft.setTokensToMintPerRarity(5, "whale");
-      const overridesWhale = {value: ethers.utils.parseEther("1.0")}
+      const overridesWhale = {value: ethers.utils.parseEther("0.5")}
       await membershipNft.randomWhaleMint(overridesWhale);
       const balanceContractAfterMint = await membershipNft.provider.getBalance(membershipNft.address);
       await membershipNft.connect(deployer).withdrawEther();
       const provider = ethers.provider;
       const balanceContractAfterWithdrawal = await membershipNft.provider.getBalance(membershipNft.address);
-      expect(balanceContractAfterMint).to.equal(ethers.utils.parseEther("1.0"))
+      expect(balanceContractAfterMint).to.equal(ethers.utils.parseEther("0.5"))
       expect(balanceContractAfterWithdrawal).to.equal(ethers.utils.parseEther("0"));
     });
   });
@@ -148,47 +141,21 @@ describe.only("ExposedMembershipNft", () => {
     beforeEach(setupMembershipNft)
 
     it("reverts when not enough ETH is sent for the whale minting function", async () => {
-      await membershipNft.setTokensToMintPerRarity(5, "whale");
       const overridesWhale = {value: ethers.utils.parseEther("0.1")}
       await expect(membershipNft.randomWhaleMint(overridesWhale)
       ).to.be.revertedWith("Incorrect Ether value");
     });
 
     it("reverts when not enough ETH is sent for the seal minting function", async () => {
-      await membershipNft.setTokensToMintPerRarity(5, "seal");
-      const overridesSeal = {value: ethers.utils.parseEther("0.1")}
+      const overridesSeal = {value: ethers.utils.parseEther("0.05")}
       await expect(membershipNft.randomSealMint(overridesSeal)
       ).to.be.revertedWith("Incorrect Ether value");
     });
 
     it("reverts when not enough ETH is sent for the plankton minting function", async () => {
-      await membershipNft.setTokensToMintPerRarity(5, "plankton");
-      const overridesPlankton = {value: ethers.utils.parseEther("0.05")}
+      const overridesPlankton = {value: ethers.utils.parseEther("0.01")}
       await expect(membershipNft.randomPlanktonMint(overridesPlankton)
       ).to.be.revertedWith("Incorrect Ether value");
-    });
-
-    it("reverts when no whale tokens are left", async () => {
-      await membershipNft.setTokensToMintPerRarity(7, "whale");
-      const overridesWhale = {value: ethers.utils.parseEther("1.0")}
-      await membershipNft.randomWhaleMint(overridesWhale);
-      await membershipNft.randomWhaleMint(overridesWhale);
-      await membershipNft.randomWhaleMint(overridesWhale);
-      await membershipNft.randomWhaleMint(overridesWhale);
-      await membershipNft.randomWhaleMint(overridesWhale);
-      await membershipNft.randomWhaleMint(overridesWhale);
-      await expect(membershipNft.randomWhaleMint(overridesWhale)
-      ).to.be.revertedWith("Sold out");
-    });
-
-    it("reverts when too many NFTs have been minted per batch per rarity", async () => {
-      await membershipNft.setTokensToMintPerRarity(3, "whale");
-      const overridesWhale = {value: ethers.utils.parseEther("1.0")}
-      await membershipNft.randomWhaleMint(overridesWhale);
-      await membershipNft.randomWhaleMint(overridesWhale);
-      await membershipNft.randomWhaleMint(overridesWhale);
-      await expect(membershipNft.randomWhaleMint(overridesWhale)
-      ).to.be.revertedWith("Batch sold out");
     });
   });
 
@@ -206,8 +173,8 @@ describe.only("ExposedMembershipNft", () => {
       const findTokenURISeal = await membershipNft.tokenURI(sealDiamondId);
       const findTokenURIPlankton = await membershipNft.tokenURI(planktonSilverId);
       expect(findTokenURIWhale).to.equal("https://token-cdn-domain/1");
-      expect(findTokenURISeal).to.equal("https://token-cdn-domain/10");
-      expect(findTokenURIPlankton).to.equal("https://token-cdn-domain/28");
+      expect(findTokenURISeal).to.equal("https://token-cdn-domain/80");
+      expect(findTokenURIPlankton).to.equal("https://token-cdn-domain/1036");
     });
   });
 
@@ -222,7 +189,7 @@ describe.only("ExposedMembershipNft", () => {
 
     it("sets the rarity per token id after mint - Diamond", async() => {
       await membershipNft.diamondMint(0);
-      const rarity = await membershipNft.rarityByTokenId(4);
+      const rarity = await membershipNft.rarityByTokenId(25);
       expect(rarity).to.equal("Diamond");
     });
   });
