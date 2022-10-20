@@ -144,17 +144,17 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
       _setRoleAdmin(keccak256(abi.encodePacked(j)), keccak256(abi.encodePacked(j)));
     }
 
-    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingObsidian, MintType.Plankton);
-    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingObsidian, MintType.Plankton);
-    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingDiamond, MintType.Plankton);
-    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingDiamond, MintType.Plankton);
-    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingGold, MintType.Plankton);
-    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingGold, MintType.Plankton);
-    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingSilver, MintType.Plankton);
-    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingSilver, MintType.Plankton);
-    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingSilver, MintType.Plankton);
-    // planktonTokensLeft = planktonTokensLeft-10;
-    // setTokenPrice();  
+    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingObsidian, MintType.Plankton);
+    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingObsidian, MintType.Plankton);
+    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingDiamond, MintType.Plankton);
+    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingDiamond, MintType.Plankton);
+    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingGold, MintType.Plankton);
+    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingGold, MintType.Plankton);
+    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingSilver, MintType.Plankton);
+    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingSilver, MintType.Plankton);
+    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingSilver, MintType.Plankton);
+    planktonTokensLeft = planktonTokensLeft-10;
+    setTokenPrice();  
   }
 
   function freeze() external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -197,7 +197,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   *     The random number will be between the given total token amount and 1.
   *@param tokenIdsToPickFrom is the amount of tokens that are available per mint type.    
   */
-  function _getRandomNumber(uint256 tokenIdsToPickFrom) internal view returns (uint256 randomNumber) {
+  function _getRandomNumber(uint256 tokenIdsToPickFrom) public view returns (uint256 randomNumber) {
     uint256 i = uint256(uint160(address(msg.sender)));
     randomNumber = (block.difficulty + i) % tokenIdsToPickFrom + 1;
   }
@@ -336,7 +336,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   *@dev Random minting of token Ids associated with the whale mint type.
   */
   function randomWhaleMint() public payable {
-      require(PRICE_PER_WHALE_TOKEN <= msg.value, "Incorrect Ether value");
+      //require(PRICE_PER_WHALE_TOKEN <= msg.value, "Incorrect Ether value");
       require(whaleTokensLeft > 0, "Whale sold out");
       uint256 randomNumber = _getRandomNumber(TokenIdsByMintType[MintType.Whale].endingDiamond);
       _mintFromDeterminant(randomNumber, MintType.Whale);
@@ -347,7 +347,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   *@dev Random minting of token Ids associated with the seal mint type.
   */
   function randomSealMint() public payable {
-      require(PRICE_PER_SEAL_TOKEN <= msg.value, "Incorrect Ether value");
+      //require(PRICE_PER_SEAL_TOKEN <= msg.value, "Incorrect Ether value");
       require(sealTokensLeft > 0, "Seal sold out");
       uint256 randomNumber = _getRandomNumber(TokenIdsByMintType[MintType.Seal].endingGold);
       _mintFromDeterminant(randomNumber, MintType.Seal);
@@ -358,9 +358,9 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   *@dev Random minting of token Ids associated with the plankton mint type.
   */
   function randomPlanktonMint() public payable {
-      require(PRICE_PER_PLANKTON_TOKEN <= msg.value, "Incorrect Ether value");
+      //require(PRICE_PER_PLANKTON_TOKEN <= msg.value, "Incorrect Ether value");
       require(planktonTokensLeft > 0, "Plankton sold out");
-      uint256 randomNumber = _getRandomNumber(TokenIdsByMintType[MintType.Seal].endingSilver);
+      uint256 randomNumber = _getRandomNumber(TokenIdsByMintType[MintType.Plankton].endingSilver);
       _mintFromDeterminant(randomNumber, MintType.Plankton);
       planktonTokensLeft--;
   }
