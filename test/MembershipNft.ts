@@ -173,8 +173,8 @@ describe.only("ExposedMembershipNft", () => {
       const findTokenURISeal = await membershipNft.tokenURI(sealDiamondId);
       const findTokenURIPlankton = await membershipNft.tokenURI(planktonSilverId);
       expect(findTokenURIWhale).to.equal("https://token-cdn-domain/1");
-      expect(findTokenURISeal).to.equal("https://token-cdn-domain/80");
-      expect(findTokenURIPlankton).to.equal("https://token-cdn-domain/1036");
+      expect(findTokenURISeal).to.equal("https://token-cdn-domain/103");
+      expect(findTokenURIPlankton).to.equal("https://token-cdn-domain/1033");
     });
   });
 

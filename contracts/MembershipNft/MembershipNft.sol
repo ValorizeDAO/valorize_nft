@@ -25,14 +25,14 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     uint256 public whaleTokensLeft;
     uint256 public sealTokensLeft;
     uint256 public planktonTokensLeft;
-    
-    uint256 public totalWhaleTokenAmount;
-    uint256 public totalSealTokenAmount;
-    uint256 public totalPlanktonTokenAmount;
 
-    uint256 internal whaleMyceliaAmount;
-    uint256 internal sealMyceliaAmount;
-    uint256 internal planktonMyceliaAmount;
+    uint256 allMycelia;
+    uint256 allObsidian;
+    uint256 allDiamond;
+    uint256 allGold;
+    uint256 allSilver;
+    
+    uint256 public totalTokenAmount;
 
     bool internal frozen = false;
 
@@ -79,34 +79,31 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     uint totalSealCalls = 0;
     uint totalPlanktonCalls = 0;
       
-    for(i = 0; i < _whaleCalls.length; i++){
+    for(i = 0; i < _whaleCalls.length; i++) {
       totalWhaleCalls = totalWhaleCalls + _whaleCalls[i];
       totalSealCalls = totalSealCalls + _sealCalls[i];
       totalPlanktonCalls = totalPlanktonCalls + _planktonCalls[i];
     }
-    
-    whaleMyceliaAmount = _whaleCalls[0];
-    sealMyceliaAmount = _sealCalls[0];
-    planktonMyceliaAmount = _planktonCalls[0];
 
     whaleTokensLeft = totalWhaleCalls;
     sealTokensLeft = totalSealCalls;
     planktonTokensLeft = totalPlanktonCalls;
-    
-    totalWhaleTokenAmount = totalWhaleCalls;
-    totalSealTokenAmount = totalSealCalls;
-    totalPlanktonTokenAmount = totalPlanktonCalls; 
 
-    uint256 startSealId = totalWhaleTokenAmount;
-    uint256 startPlanktonId = totalWhaleTokenAmount + totalSealTokenAmount;
-    
-    TokenIdsByMintType[MintType.Whale] = TokenIds(
-        1,                              
-        _whaleCalls[0],
-        _whaleCalls[0] + 1,
-        _whaleCalls[0] + _whaleCalls[1],
-        _whaleCalls[0] + _whaleCalls[1] + 1,
-        _whaleCalls[0] + _whaleCalls[1] + _whaleCalls[2],
+    totalTokenAmount = totalWhaleCalls + totalSealCalls + totalPlanktonCalls;
+
+    allMycelia = _whaleCalls[0] + _sealCalls[0] + _planktonCalls[0];
+    allObsidian = _whaleCalls[1] + _sealCalls[1] + _planktonCalls[1];
+    allDiamond = _whaleCalls[2] + _sealCalls[2] + _planktonCalls[2];
+    allGold = _whaleCalls[3] + _sealCalls[3] + _planktonCalls[3];
+    allSilver = _whaleCalls[4] + _sealCalls[4] + _planktonCalls[4];
+
+    TokenIdsByMintType[MintType.Whale] = TokenIds( //mycelia = 1 to _whaleCalls[0], obsidian = allMycelia + _whaleCalls[1]
+        1,              //1   
+        _whaleCalls[0], //3
+        allMycelia + 1, //13
+        allMycelia + _whaleCalls[1], //32
+        allMycelia + allObsidian + 1, //73
+        allMycelia + allObsidian + _whaleCalls[2],// 102
         _whaleCalls[3],
         _whaleCalls[3],
         _whaleCalls[4],
@@ -114,29 +111,29 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     );
 
     TokenIdsByMintType[MintType.Seal] = TokenIds(
-        startSealId + 1,                            
-        startSealId + _sealCalls[0],
-        startSealId + _sealCalls[0] + 1,
-        startSealId + _sealCalls[0] + _sealCalls[1], 
-        startSealId + _sealCalls[0] + _sealCalls[1] + 1, 
-        startSealId + _sealCalls[0] + _sealCalls[1] + _sealCalls[2],
-        startSealId + _sealCalls[0] + _sealCalls[1] + _sealCalls[2] + 1,
-        startSealId + _sealCalls[0] + _sealCalls[1] + _sealCalls[2] + _sealCalls[3],
-        startSealId + _sealCalls[4],
-        startSealId + _sealCalls[4]
+      _whaleCalls[0] + 1,//4
+      _whaleCalls[0] + _sealCalls[0], //8
+      allMycelia + _whaleCalls[1] + 1, //33
+      allMycelia + _whaleCalls[1] + _sealCalls[1], //52
+      allMycelia + allObsidian + _whaleCalls[2] + 1, //12 + 60 + 30 + 1 = 103
+      allMycelia + allObsidian + _whaleCalls[2] + _sealCalls[2], //12 + 60 + 30 + 30 = 132
+      allMycelia + allObsidian + allDiamond + 1, // 12 + 60 + 240 = 313 
+      allMycelia + allObsidian + allDiamond + _sealCalls[3], // 312 + 95 = 407
+      _sealCalls[4],
+      _sealCalls[4] 
     );
 
     TokenIdsByMintType[MintType.Plankton] = TokenIds(
-        startPlanktonId + 1,                             
-        startPlanktonId + _planktonCalls[0],
-        startPlanktonId + _planktonCalls[0] + 1,
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1],
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1] + 1,
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1] + _planktonCalls[2],
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1] + _planktonCalls[2] + 1,
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1] + _planktonCalls[2] + _planktonCalls[3],
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1] + _planktonCalls[2] + _planktonCalls[3] + 1,
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1] + _planktonCalls[2] + _planktonCalls[3] + _planktonCalls[4]
+      _whaleCalls[0] + _sealCalls[0] + 1,//9
+      allMycelia, //12
+      allMycelia + _whaleCalls[1] + _sealCalls[1] + 1, //53
+      allMycelia + allObsidian, //72
+      allMycelia + allObsidian + _whaleCalls[2] + _sealCalls[2] + 1, //12 + 60 + 30 + 1 = 133
+      allMycelia + allObsidian + allDiamond, //12 + 60 + 30 + 30 + 180 = 312
+      allMycelia + allObsidian + allDiamond + _sealCalls[3] + 1, // 12 + 60 + 240 + 95 + 1 = 408 
+      allMycelia + allObsidian + allDiamond + allGold, // 407 + 625 = 1032
+      allMycelia + allObsidian + allDiamond + allGold + 1, // 1033
+      allMycelia + allObsidian + allDiamond + allGold + allSilver //1032 + 1200 = 2232
     );
 
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -147,17 +144,17 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
       _setRoleAdmin(keccak256(abi.encodePacked(j)), keccak256(abi.encodePacked(j)));
     }
 
-    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingObsidian, MintType.Plankton);
-    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingObsidian, MintType.Plankton);
-    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingDiamond, MintType.Plankton);
-    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingDiamond, MintType.Plankton);
-    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingGold, MintType.Plankton);
-    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingGold, MintType.Plankton);
-    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingSilver, MintType.Plankton);
-    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingSilver, MintType.Plankton);
-    _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingSilver, MintType.Plankton);
-    planktonTokensLeft = planktonTokensLeft-10;
-    setTokenPrice();  
+    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingObsidian, MintType.Plankton);
+    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingObsidian, MintType.Plankton);
+    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingDiamond, MintType.Plankton);
+    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingDiamond, MintType.Plankton);
+    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingGold, MintType.Plankton);
+    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingGold, MintType.Plankton);
+    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingSilver, MintType.Plankton);
+    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingSilver, MintType.Plankton);
+    // _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingSilver, MintType.Plankton);
+    // planktonTokensLeft = planktonTokensLeft-10;
+    // setTokenPrice();  
   }
 
   function freeze() external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -198,11 +195,11 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   /**
   *@dev Returns a random number when the total token amount is given.
   *     The random number will be between the given total token amount and 1.
-  *@param totalTokenAmount is the amount of tokens that are available per mint type.    
+  *@param tokenIdsToPickFrom is the amount of tokens that are available per mint type.    
   */
-  function _getRandomNumber(uint256 totalTokenAmount) internal view returns (uint256 randomNumber) {
+  function _getRandomNumber(uint256 tokenIdsToPickFrom) internal view returns (uint256 randomNumber) {
     uint256 i = uint256(uint160(address(msg.sender)));
-    randomNumber = (block.difficulty + i) % totalTokenAmount + 1;
+    randomNumber = (block.difficulty + i) % tokenIdsToPickFrom + 1;
   }
 
   /**
@@ -212,19 +209,19 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   *       token Ids will be minted (see constructor).   
   */
   function _mintFromDeterminant(uint256 determinant, MintType mintType) internal {
-    if (determinant <= TokenIdsByMintType[mintType].endingMycelia) {      
+    if (determinant <= allMycelia) {      
       _myceliaMint(mintType);
 
-    } else if (determinant <= TokenIdsByMintType[mintType].endingObsidian) {
+    } else if (determinant <= (allMycelia + allObsidian)) {
       _obsidianMint(mintType);
 
-    } else if (determinant <= TokenIdsByMintType[mintType].endingDiamond) {
+    } else if (determinant <= (allMycelia + allObsidian + allDiamond)) {
       _diamondMint(mintType);
 
-    } else if (determinant <= TokenIdsByMintType[mintType].endingGold) {
+    } else if (determinant <= (allMycelia + allObsidian + allDiamond + allGold)) {
       _goldMint(mintType);
       
-    } else if (determinant <= TokenIdsByMintType[mintType].endingSilver) {
+    } else if (determinant <= (allMycelia + allObsidian + allDiamond + allGold + allSilver)) {
       _silverMint();
     }
   }
@@ -277,9 +274,9 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   function _diamondMint(MintType mintType) internal { 
     if (
       mintType == MintType.Whale && 
-      TokenIdsByMintType[MintType.Whale].startingDiamond > TokenIdsByMintType[MintType.Whale].endingDiamond
-    ) {
+      TokenIdsByMintType[MintType.Whale].startingDiamond > TokenIdsByMintType[MintType.Whale].endingDiamond) {
       _mintFromDeterminant(TokenIdsByMintType[MintType.Whale].startingMycelia, MintType.Whale);
+    
     } else if(TokenIdsByMintType[mintType].startingDiamond > TokenIdsByMintType[mintType].endingDiamond) {
       _mintFromDeterminant(TokenIdsByMintType[mintType].startingGold, mintType);
     
@@ -304,7 +301,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     if (
       mintType == MintType.Plankton &&
       TokenIdsByMintType[MintType.Plankton].startingGold > TokenIdsByMintType[MintType.Plankton].endingGold) {
-      _mintFromDeterminant(TokenIdsByMintType[mintType].startingGold+1, mintType);
+      _mintFromDeterminant(TokenIdsByMintType[MintType.Plankton].startingSilver, mintType);
       
     } else if(
       mintType == MintType.Seal &&
@@ -341,7 +338,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   function randomWhaleMint() public payable {
       require(PRICE_PER_WHALE_TOKEN <= msg.value, "Incorrect Ether value");
       require(whaleTokensLeft > 0, "Whale sold out");
-      uint256 randomNumber = _getRandomNumber(totalWhaleTokenAmount);
+      uint256 randomNumber = _getRandomNumber(TokenIdsByMintType[MintType.Whale].endingDiamond);
       _mintFromDeterminant(randomNumber, MintType.Whale);
       whaleTokensLeft--;
   }
@@ -352,7 +349,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   function randomSealMint() public payable {
       require(PRICE_PER_SEAL_TOKEN <= msg.value, "Incorrect Ether value");
       require(sealTokensLeft > 0, "Seal sold out");
-      uint256 randomNumber = totalWhaleTokenAmount + _getRandomNumber(totalSealTokenAmount);
+      uint256 randomNumber = _getRandomNumber(TokenIdsByMintType[MintType.Seal].endingGold);
       _mintFromDeterminant(randomNumber, MintType.Seal);
       sealTokensLeft--;
   }
@@ -363,7 +360,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   function randomPlanktonMint() public payable {
       require(PRICE_PER_PLANKTON_TOKEN <= msg.value, "Incorrect Ether value");
       require(planktonTokensLeft > 0, "Plankton sold out");
-      uint256 randomNumber = (totalWhaleTokenAmount + totalSealTokenAmount) + _getRandomNumber(totalPlanktonTokenAmount);
+      uint256 randomNumber = _getRandomNumber(TokenIdsByMintType[MintType.Seal].endingSilver);
       _mintFromDeterminant(randomNumber, MintType.Plankton);
       planktonTokensLeft--;
   }
@@ -373,24 +370,16 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   *@param _tokenId the id of the token of interest.
   */
   function rarityByTokenId(uint256 _tokenId) external view returns (string memory) {
-    if ((_tokenId >= 1 && _tokenId <= TokenIdsByMintType[MintType.Whale].endingMycelia) 
-    || (_tokenId > totalWhaleTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Seal].endingMycelia)
-    || (_tokenId > totalSealTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Plankton].endingMycelia)) {
+    if ((_tokenId >= 1 && _tokenId <= allMycelia)) {
       return "Mycelia";
     
-    } else if ((_tokenId > TokenIdsByMintType[MintType.Whale].endingMycelia && _tokenId <= TokenIdsByMintType[MintType.Whale].endingObsidian)
-    || (_tokenId > TokenIdsByMintType[MintType.Seal].endingMycelia && _tokenId <= TokenIdsByMintType[MintType.Seal].endingObsidian)
-    || (_tokenId > TokenIdsByMintType[MintType.Plankton].endingMycelia && _tokenId <= TokenIdsByMintType[MintType.Plankton].endingObsidian)) {
+    } else if ((_tokenId > allMycelia && _tokenId <= (allMycelia + allObsidian))) {
       return "Obsidian";
     
-    } else if((_tokenId > TokenIdsByMintType[MintType.Whale].endingObsidian && _tokenId <= TokenIdsByMintType[MintType.Whale].endingDiamond)
-    || (_tokenId > TokenIdsByMintType[MintType.Seal].endingObsidian && _tokenId <= TokenIdsByMintType[MintType.Seal].endingDiamond)
-    || (_tokenId > TokenIdsByMintType[MintType.Plankton].endingObsidian && _tokenId <= TokenIdsByMintType[MintType.Plankton].endingDiamond)) {
+    } else if((_tokenId > (allMycelia + allObsidian) && _tokenId <= (allMycelia + allObsidian + allDiamond))) {
       return "Diamond";
     
-    } else if((_tokenId > TokenIdsByMintType[MintType.Whale].endingDiamond && _tokenId <= TokenIdsByMintType[MintType.Whale].endingGold)
-    || (_tokenId > TokenIdsByMintType[MintType.Seal].endingDiamond && _tokenId <= TokenIdsByMintType[MintType.Seal].endingGold)
-    || (_tokenId > TokenIdsByMintType[MintType.Plankton].endingDiamond && _tokenId <= TokenIdsByMintType[MintType.Plankton].endingGold)) {
+    } else if((_tokenId > (allMycelia + allObsidian + allDiamond) && _tokenId <= (allMycelia + allObsidian + allDiamond + allGold))) {
       return "Gold";
     
     } else {
@@ -445,15 +434,9 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     ) {
       royaltyAmount = (_salePrice / 100) * 10; 
 
-      if (_tokenId >= 1 && _tokenId <= TokenIdsByMintType[MintType.Whale].endingMycelia) {
+      if (_tokenId >= 1 && _tokenId <= allMycelia) {
         return(royaltyRecipients[(_tokenId-1)], royaltyAmount);  
-       
-      } else if (_tokenId > totalWhaleTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Seal].endingMycelia) {
-          return(royaltyRecipients[(_tokenId-1-totalWhaleTokenAmount+whaleMyceliaAmount)], royaltyAmount);
-
-      } else if ((_tokenId > totalSealTokenAmount && _tokenId <= TokenIdsByMintType[MintType.Plankton].endingMycelia)) {
-          return(royaltyRecipients[(_tokenId-1-(totalSealTokenAmount+totalWhaleTokenAmount)+whaleMyceliaAmount+sealMyceliaAmount)], royaltyAmount);
-      
+  
       } else {
         return(royaltyDistributorAddresses[(_tokenId % royaltyDistributorAddresses.length)], royaltyAmount); 
     }
