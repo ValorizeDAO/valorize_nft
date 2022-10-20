@@ -11,9 +11,9 @@ chai.use(solidity);
 const { expect } = chai;
 
 const INITIAL_URI = "https://token-cdn-domain/";
-const REMAINING_WHALE_FUNCTION_CALLS = [4, 20, 30, 0, 0];
+const REMAINING_WHALE_FUNCTION_CALLS = [3, 20, 30, 0, 0];
 const REMAINING_SEAL_FUNCTION_CALLS = [5, 20, 30, 95, 0];
-const REMAINING_PLANKTON_FUNCTION_CALLS = [3, 20, 180, 625, 1200];
+const REMAINING_PLANKTON_FUNCTION_CALLS = [4, 20, 180, 625, 1200];
 
 const REMAINING_WHALE_FUNCTION_CALLS_V2 = [1, 2, 3, 0, 0];
 const REMAINING_SEAL_FUNCTION_CALLS_V2 = [1, 2, 3, 4, 0];
@@ -58,7 +58,7 @@ describe.only("ExposedMembershipNft", () => {
   
     it("mints three plankton NFTs upon deployment", async() => {
       const tokensLeft = await membershipNft.planktonTokensLeft();
-      const totalAmount = await membershipNft.totalPlanktonTokenAmount()
+      const totalAmount = 2029;
       expect(totalAmount).to.equal(tokensLeft.add(10)); 
     })
   });
@@ -76,9 +76,9 @@ describe.only("ExposedMembershipNft", () => {
 
     it("mints a random seal NFT", async () => {
       const overridesSeal = {value: ethers.utils.parseEther("0.2")}
-      const leftBeforeMint = await membershipNft.sealTokensLeft();;
+      const leftBeforeMint = await membershipNft.sealTokensLeft();
       await membershipNft.randomSealMint(overridesSeal);
-      const leftAfterMint = await membershipNft.sealTokensLeft();;
+      const leftAfterMint = await membershipNft.sealTokensLeft();
       expect(leftBeforeMint).to.equal(leftAfterMint.add(1));
     });
 
@@ -174,7 +174,7 @@ describe.only("ExposedMembershipNft", () => {
       const findTokenURIPlankton = await membershipNft.tokenURI(planktonSilverId);
       expect(findTokenURIWhale).to.equal("https://token-cdn-domain/1");
       expect(findTokenURISeal).to.equal("https://token-cdn-domain/103");
-      expect(findTokenURIPlankton).to.equal("https://token-cdn-domain/1033");
+      expect(findTokenURIPlankton).to.equal("https://token-cdn-domain/1037");
     });
   });
 
@@ -189,7 +189,7 @@ describe.only("ExposedMembershipNft", () => {
 
     it("sets the rarity per token id after mint - Diamond", async() => {
       await membershipNft.diamondMint(0);
-      const rarity = await membershipNft.rarityByTokenId(25);
+      const rarity = await membershipNft.rarityByTokenId(73);
       expect(rarity).to.equal("Diamond");
     });
   });
