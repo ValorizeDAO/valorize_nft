@@ -43,7 +43,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
 
     mapping(MintType => TokenIds) public TokenIdsByMintType;
 
-    enum MintType { Whale, Seal, Plankton }
+    enum MintType { Whale, Seal, Plankton, Total }
 
     struct TokenIds {
       uint256 startingMycelia;
@@ -97,16 +97,32 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     totalSealTokenAmount = totalSealCalls;
     totalPlanktonTokenAmount = totalPlanktonCalls; 
 
-    uint256 startSealId = totalWhaleTokenAmount;
-    uint256 startPlanktonId = totalWhaleTokenAmount + totalSealTokenAmount;
-    
-    TokenIdsByMintType[MintType.Whale] = TokenIds(
-        1,                              
-        _whaleCalls[0],
-        _whaleCalls[0] + 1,
-        _whaleCalls[0] + _whaleCalls[1],
-        _whaleCalls[0] + _whaleCalls[1] + 1,
-        _whaleCalls[0] + _whaleCalls[1] + _whaleCalls[2],
+    uint256 allMycelia = _whaleCalls[0]+ _sealCalls[0] + _planktonCalls[0];
+    uint256 allObsidian = _whaleCalls[1]+ _sealCalls[1] + _planktonCalls[1];
+    uint256 allDiamond = _whaleCalls[2]+ _sealCalls[2] + _planktonCalls[2];
+    uint256 allGold = _whaleCalls[3]+ _sealCalls[3] + _planktonCalls[3];
+    uint256 allSilver = _whaleCalls[4]+ _sealCalls[4] + _planktonCalls[4];
+
+    TokenIdsByMintType[MintType.Total] = TokenIds(
+      1,                              
+      allMycelia,
+      allMycelia + 1,
+      allMycelia + allObsidian,
+      allMycelia + allObsidian + 1,
+      allMycelia + allObsidian + allDiamond,
+      allMycelia + allObsidian + allDiamond + 1,
+      allMycelia + allObsidian + allDiamond + allGold,
+      allMycelia + allObsidian + allDiamond + allGold + 1,
+      allMycelia + allObsidian + allDiamond + allGold + allSilver
+    );
+
+    TokenIdsByMintType[MintType.Whale] = TokenIds( //mycelia = 1 to _whaleCalls[0], obsidian = allMycelia + _whaleCalls[1]
+        1,              //1   
+        _whaleCalls[0], //3
+        allMycelia + 1, //13
+        allMycelia + _whaleCalls[1], //32
+        allMycelia + allObsidian + 1, //73
+        allMycelia + allObsidian + _whaleCalls[2],// 102
         _whaleCalls[3],
         _whaleCalls[3],
         _whaleCalls[4],
@@ -114,29 +130,29 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     );
 
     TokenIdsByMintType[MintType.Seal] = TokenIds(
-        startSealId + 1,                            
-        startSealId + _sealCalls[0],
-        startSealId + _sealCalls[0] + 1,
-        startSealId + _sealCalls[0] + _sealCalls[1], 
-        startSealId + _sealCalls[0] + _sealCalls[1] + 1, 
-        startSealId + _sealCalls[0] + _sealCalls[1] + _sealCalls[2],
-        startSealId + _sealCalls[0] + _sealCalls[1] + _sealCalls[2] + 1,
-        startSealId + _sealCalls[0] + _sealCalls[1] + _sealCalls[2] + _sealCalls[3],
-        startSealId + _sealCalls[4],
-        startSealId + _sealCalls[4]
+      _whaleCalls[0] + 1,//4
+      _whaleCalls[0] + _sealCalls[0], //8
+      allMycelia + _whaleCalls[1] + 1, //33
+      allMycelia + _whaleCalls[1] + _sealCalls[1], //52
+      allMycelia + allObsidian + _whaleCalls[2] + 1, //12 + 60 + 30 + 1 = 103
+      allMycelia + allObsidian + _whaleCalls[2] + _sealCalls[2], //12 + 60 + 30 + 30 = 132
+      allMycelia + allObsidian + allDiamond + 1, // 12 + 60 + 240 = 313 
+      allMycelia + allObsidian + allDiamond + _sealCalls[3], // 312 + 95 = 407
+      _sealCalls[4],
+      _sealCalls[4] 
     );
 
     TokenIdsByMintType[MintType.Plankton] = TokenIds(
-        startPlanktonId + 1,                             
-        startPlanktonId + _planktonCalls[0],
-        startPlanktonId + _planktonCalls[0] + 1,
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1],
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1] + 1,
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1] + _planktonCalls[2],
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1] + _planktonCalls[2] + 1,
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1] + _planktonCalls[2] + _planktonCalls[3],
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1] + _planktonCalls[2] + _planktonCalls[3] + 1,
-        startPlanktonId + _planktonCalls[0] + _planktonCalls[1] + _planktonCalls[2] + _planktonCalls[3] + _planktonCalls[4]
+      _whaleCalls[0] + _sealCalls[0] + 1,//9
+      allMycelia, //12
+      allMycelia + _whaleCalls[1] + _sealCalls[1] + 1, //53
+      allMycelia + allObsidian, //72
+      allMycelia + allObsidian + _whaleCalls[2] + _sealCalls[2] + 1, //12 + 60 + 30 + 1 = 133
+      allMycelia + allObsidian + allDiamond, //12 + 60 + 30 + 30 + 180 = 312
+      allMycelia + allObsidian + allDiamond + _sealCalls[3] + 1, // 12 + 60 + 240 + 95 + 1 = 408 
+      allMycelia + allObsidian + allDiamond + allGold, // 407 + 625 = 1032
+      allMycelia + allObsidian + allDiamond + allGold + 1, // 1033
+      allMycelia + allObsidian + allDiamond + allGold + allSilver //1032 + 1200 = 2232
     );
 
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
