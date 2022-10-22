@@ -60,9 +60,9 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
 
   constructor(
     string memory _URI,
-    uint256[] memory _whaleCalls, //  [3, 12, 35, 0, 0] // [3, 6, 9, 0, 0] //[1, 2, 3, 0, 0]
-    uint256[] memory _sealCalls, //   [3, 18, 40, 90, 0] // [3, 6, 9, 12, 0] // [1, 2, 3, 4, 0]
-    uint256[] memory _planktonCalls, //[4, 60, 125, 310, 2301] // [3, 6, 9, 12, 15] // [1, 2, 3, 4, 5]
+    uint256[] memory _whaleCalls, //  [1, 2, 3, 0, 0]
+    uint256[] memory _sealCalls, //   [1, 2, 3, 4, 0]
+    uint256[] memory _planktonCalls, //[1, 2, 3, 4, 5]
     address[] memory _royaltyDistributorAddresses,
     address[] memory _royaltyRecipients 
   ) ERC721("MEMBERSHIP", "VMEMB") {
@@ -92,13 +92,13 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     allGold = _whaleCalls[3] + _sealCalls[3] + _planktonCalls[3];
     allSilver = _whaleCalls[4] + _sealCalls[4] + _planktonCalls[4];
 
-    TokenIdsByMintType[MintType.Whale] = TokenIds( //mycelia = 1 to _whaleCalls[0], obsidian = allMycelia + _whaleCalls[1]
-        1,              //1   
-        _whaleCalls[0], //3
-        allMycelia + 1, //13
-        allMycelia + _whaleCalls[1], //32
-        allMycelia + allObsidian + 1, //73
-        allMycelia + allObsidian + _whaleCalls[2],// 102
+    TokenIdsByMintType[MintType.Whale] = TokenIds(
+        1,                
+        _whaleCalls[0],
+        allMycelia + 1,
+        allMycelia + _whaleCalls[1],
+        allMycelia + allObsidian + 1,
+        allMycelia + allObsidian + _whaleCalls[2],
         _whaleCalls[3],
         _whaleCalls[3],
         _whaleCalls[4],
@@ -106,29 +106,29 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     );
 
     TokenIdsByMintType[MintType.Seal] = TokenIds(
-      _whaleCalls[0] + 1,//4
-      _whaleCalls[0] + _sealCalls[0], //8
-      allMycelia + _whaleCalls[1] + 1, //33
-      allMycelia + _whaleCalls[1] + _sealCalls[1], //52
-      allMycelia + allObsidian + _whaleCalls[2] + 1, //12 + 60 + 30 + 1 = 103
-      allMycelia + allObsidian + _whaleCalls[2] + _sealCalls[2], //12 + 60 + 30 + 30 = 132
-      allMycelia + allObsidian + allDiamond + 1, // 12 + 60 + 240 = 313 
-      allMycelia + allObsidian + allDiamond + _sealCalls[3], // 312 + 95 = 407
+      _whaleCalls[0] + 1,
+      _whaleCalls[0] + _sealCalls[0],
+      allMycelia + _whaleCalls[1] + 1,
+      allMycelia + _whaleCalls[1] + _sealCalls[1], 
+      allMycelia + allObsidian + _whaleCalls[2] + 1, 
+      allMycelia + allObsidian + _whaleCalls[2] + _sealCalls[2], 
+      allMycelia + allObsidian + allDiamond + 1, 
+      allMycelia + allObsidian + allDiamond + _sealCalls[3], 
       _sealCalls[4],
       _sealCalls[4] 
     );
 
     TokenIdsByMintType[MintType.Plankton] = TokenIds(
-      _whaleCalls[0] + _sealCalls[0] + 1,//9
-      allMycelia, //12
-      allMycelia + _whaleCalls[1] + _sealCalls[1] + 1, //53
-      allMycelia + allObsidian, //72
-      allMycelia + allObsidian + _whaleCalls[2] + _sealCalls[2] + 1, //12 + 60 + 30 + 1 = 133
-      allMycelia + allObsidian + allDiamond, //12 + 60 + 30 + 30 + 180 = 312
-      allMycelia + allObsidian + allDiamond + _sealCalls[3] + 1, // 12 + 60 + 240 + 95 + 1 = 408 
-      allMycelia + allObsidian + allDiamond + allGold, // 407 + 625 = 1032
-      allMycelia + allObsidian + allDiamond + allGold + 1, // 1033
-      allMycelia + allObsidian + allDiamond + allGold + allSilver //1032 + 1200 = 2232
+      _whaleCalls[0] + _sealCalls[0] + 1,
+      allMycelia, 
+      allMycelia + _whaleCalls[1] + _sealCalls[1] + 1, 
+      allMycelia + allObsidian, 
+      allMycelia + allObsidian + _whaleCalls[2] + _sealCalls[2] + 1, 
+      allMycelia + allObsidian + allDiamond, 
+      allMycelia + allObsidian + allDiamond + _sealCalls[3] + 1, 
+      allMycelia + allObsidian + allDiamond + allGold, 
+      allMycelia + allObsidian + allDiamond + allGold + 1, 
+      allMycelia + allObsidian + allDiamond + allGold + allSilver
     );
 
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -193,7 +193,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   *     The random number will be between the given total token amount and 1.
   *@param tokenIdsToPickFrom is the amount of tokens that are available per mint type.    
   */
-  function _getRandomNumber(uint256 tokenIdsToPickFrom) public view returns (uint256 randomNumber) {
+  function _getRandomNumber(uint256 tokenIdsToPickFrom) internal view returns (uint256 randomNumber) {
     uint256 i = uint256(uint160(address(msg.sender)));
     randomNumber = (block.difficulty + i) % tokenIdsToPickFrom + 1;
   }
@@ -431,7 +431,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
       royaltyAmount = (_salePrice / 100) * 10; 
 
       if (_tokenId >= 1 && _tokenId <= allMycelia) {
-        return(royaltyRecipients[(_tokenId-1)], royaltyAmount);  
+        return(royaltyRecipients[(_tokenId % royaltyRecipients.length)], royaltyAmount);  
   
       } else {
         return(royaltyDistributorAddresses[(_tokenId % royaltyDistributorAddresses.length)], royaltyAmount); 
