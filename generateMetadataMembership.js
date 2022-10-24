@@ -49,7 +49,7 @@ for (let i = 1; i <= 2232; i++) {
       type: 'string',
       value: 'Mycelia',
       description:
-        'Valorize Mycelia NFTs are a collection of 12 1 of 1 NFTs each made by a different gifted artist. They grant you the benefits described in the benefits property',
+        'Valorize Mycelia NFTs are a collection of 12 1 of 1 NFTs each made by a different gifted artist. Holding a Mycelia NFT will grant you the benefits described in the benefits property',
       benefits: [
         'An NFT that is part of the most unique collection of art in NFT history',
         'The highest amount of quarterly $VALOR token airdrops',
@@ -57,14 +57,14 @@ for (let i = 1; i <= 2232; i++) {
         'Free access to our upcoming Tokenomics Academy Course',
       ],
     }
-  } else if (i > 12 && i<=72) {
+  } else if (i > 12 && i <= 72) {
     animal = animals[i % 12]
     artist = artistNames[i % 12]
     rarity = {
       type: 'string',
       value: 'Obsidian',
       description:
-      'Valorize Obsidian NFTs are a collection of 60 NFTs as each Obsidian Art has 5 copies per artist. They grant you the benefits described in the benefits property',
+      'Valorize Obsidian NFTs are a collection of 60 NFTs as each Obsidian Art has 5 copies per artist. Holding an Obsidian NFT will you the benefits described in the benefits property',
       benefits: [
         'An NFT that is part of the most unique collection of art in NFT history',
         'A large amount of quarterly $VALOR token airdrops',

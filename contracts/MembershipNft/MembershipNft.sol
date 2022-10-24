@@ -161,7 +161,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     return URI;
   }
 
-  function _setURI(string memory baseURI) public{
+  function setURI(string memory baseURI) public {
     require(!frozen);
     URI = baseURI;
   }
@@ -385,7 +385,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
 
   /**
   *@dev Using this function a role name is returned if the inquired 
-  *     address is present in the royaltyReceivers array
+  *     address is present in the royaltyReceivers array.
   *@param inquired is the address used to find the role name
   */
   function getRoleName(address inquired) external view returns (bytes32) {
