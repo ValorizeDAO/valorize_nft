@@ -19,7 +19,7 @@ const REMAINING_WHALE_FUNCTION_CALLS_V2 = [1, 2, 3, 0, 0];
 const REMAINING_SEAL_FUNCTION_CALLS_V2 = [1, 2, 3, 4, 0];
 const REMAINING_PLANKTON_FUNCTION_CALLS_V2 = [1, 2, 3, 4, 5];
 
-describe.only("ExposedMembershipNft", () => {
+describe("ExposedMembershipNft", () => {
   let membershipNft: ExposedMembershipNft,
     deployer: Signer,
     admin1: Signer,
@@ -198,10 +198,10 @@ describe.only("ExposedMembershipNft", () => {
     beforeEach(setupMembershipNft)
 
     it("updates the royalty receiving address", async () => {
-      const addressOld = await addresses[5].getAddress();
+      const addressOld = await addresses[6].getAddress();
       const addressNew = await addresses[7].getAddress();
-      const updateRoyaltyReceiver = await membershipNft.connect(addresses[5]
-        ).updateRoyaltyRecepient(addressOld, addressNew);
+      const updateRoyaltyReceiver = await membershipNft.connect(addresses[6]
+        ).updateRoyaltyRecipient(addressOld, addressNew);
       expect(updateRoyaltyReceiver).to.emit(membershipNft, "RecipientUpdated").withArgs(
         addressOld, addressNew
       );
@@ -210,7 +210,7 @@ describe.only("ExposedMembershipNft", () => {
     it("fails when the previousReceiver does not have a role", async () => {
       const randomAddress = await addresses[9].getAddress();
       const addressNew = await addresses[2].getAddress();
-      expect(membershipNft.updateRoyaltyRecepient(randomAddress, addressNew)
+      expect(membershipNft.updateRoyaltyRecipient(randomAddress, addressNew)
       ).to.be.revertedWith("Incorrect address for previous recipient");
     });
 
