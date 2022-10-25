@@ -2,7 +2,7 @@
 const fs = require('fs');
 
 const BASE_URI = "";
-for (let i = 1; i <= 3000; i++) {
+for (let i = 1; i <= 2010; i++) {
     let rarity;
     if (i <= 12) {
         rarity = {
