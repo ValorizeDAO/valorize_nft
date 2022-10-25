@@ -402,7 +402,7 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
   *@param previousRecipient is the address that was given a role before
   *@param newRecipient is the new address that replaces the previous address
   */
-  function updateRoyaltyRecepient(address previousRecipient, address newRecipient) external {
+  function updateRoyaltyRecipient(address previousRecipient, address newRecipient) external {
     for(uint256 i=0; i < royaltyRecipients.length; i++) {
       if(royaltyRecipients[i] == previousRecipient) {
         require(hasRole(keccak256(abi.encodePacked(i)), msg.sender));
@@ -431,10 +431,10 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
       royaltyAmount = (_salePrice / 100) * 10; 
 
       if (_tokenId >= 1 && _tokenId <= allMycelia) {
-        return(royaltyRecipients[(_tokenId % royaltyRecipients.length)], royaltyAmount);  
+        return(royaltyRecipients[((_tokenId - 1) % royaltyRecipients.length)], royaltyAmount);  
   
       } else {
-        return(royaltyDistributorAddresses[(_tokenId % royaltyDistributorAddresses.length)], royaltyAmount); 
+        return(royaltyDistributorAddresses[((_tokenId -1) % royaltyDistributorAddresses.length)], royaltyAmount); 
     }
   }      
 }
