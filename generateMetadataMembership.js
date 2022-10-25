@@ -1,18 +1,18 @@
 const fs = require('fs')
 
-const artistNames = [
-  'Calicho Arevalo',
-  'Alana McCarthy',
-  'Samantha Pordes',
-  'Martin Aveling',
-  'Nahuel Bardi',
-  'Callum Pickard',
-  'Joel Ntm',
-  'Carlos Nieto',
-  'Neda Mamo',
-  'Angga Tantama',
-  'Jaye Kang',
-  'Iqbal Hakim Boo',
+const artistNames = [//royalty distributor addresses
+  'Calicho Arevalo', //0x0D9666506da4ace5ef4aa10863992853158BB6e2
+  'Alana McCarthy',  //0xC0B58E3212C0526170589f0B28Ec2A5008f70105
+  'Samantha Pordes', //0xe5cc88F15029b825565B5d7Fc88742F156C47e04
+  'Martin Aveling',  //0x01Ed59b19E9e837B58a8cDD217F8aCD7E7905F13
+  'Nahuel Bardi',    //0x542377824BEFE28121C2D807F6aBde8791cbD81e
+  'Callum Pickard',  //0x52d83bA8E826A9cC1393355De61653274482DD80
+  'Joel Ntm',        //0xb40FDd5d3fEdB5c2946879D6Bd27D7D359076B13
+  'Carlos Nieto',    //0x7E73FF88483C51E12237A2e0F5375232167dDa46
+  'Neda Mamo',       //0x8d834c8641FbdBB0DFf24a5c343F2e459ea96923
+  'Angga Tantama',   //0xFF6be29Bc09988E528CD22BB9D3a457D1726343B
+  'Jaye Kang',       //0xe7cbA56940aC750429139Ca6a31AE6e819C009bF
+  'Iqbal Hakim Boo', //0xD2c280935c9B7A3Bf07bde3FB3e10b1E58206873
 ]
 
 const animals = [
@@ -30,7 +30,7 @@ const animals = [
   'Octopus'
 ]
 
-const BASE_URI = ''
+const BASE_URI = 'https://example.com'
 
 const outputDir = `membership_nft_metadata/`
 if (!fs.existsSync(outputDir)) {

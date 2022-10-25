@@ -25,16 +25,16 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     uint256 public sealTokensLeft;
     uint256 public planktonTokensLeft;
 
-    uint256 allMycelia;
-    uint256 allObsidian;
-    uint256 allDiamond;
-    uint256 allGold;
-    uint256 allSilver;
+    uint256 public allMycelia;
+    uint256 public allObsidian;
+    uint256 public allDiamond;
+    uint256 public allGold;
+    uint256 public allSilver;
 
     bool internal frozen = false;
 
-    address[] public royaltyDistributorAddresses;
     address[] public royaltyRecipients;
+    address[] public royaltyDistributorAddresses;
     
     bytes32 public constant ARTIST_ROLE = keccak256("ARTIST_ROLE");
 
@@ -60,16 +60,16 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
 
   constructor(
     string memory _URI,
-    uint256[] memory _whaleCalls, //  [1, 2, 3, 0, 0]
-    uint256[] memory _sealCalls, //   [1, 2, 3, 4, 0]
-    uint256[] memory _planktonCalls, //[1, 2, 3, 4, 5]
-    address[] memory _royaltyDistributorAddresses,
-    address[] memory _royaltyRecipients 
-  ) ERC721("MEMBERSHIP", "VMEMB") {
+    uint256[] memory _whaleCalls, 
+    uint256[] memory _sealCalls, 
+    uint256[] memory _planktonCalls,
+    address[] memory _royaltyRecipients, 
+    address[] memory _royaltyDistributorAddresses
+  ) ERC721("VALORIZE_MEMBERSHIP_NFT", "VMEMB") {
     URI = _URI;
     
-    royaltyDistributorAddresses = _royaltyDistributorAddresses;
     royaltyRecipients = _royaltyRecipients;
+    royaltyDistributorAddresses = _royaltyDistributorAddresses;
     
     uint i;
     uint totalWhaleCalls = 0;
@@ -161,15 +161,15 @@ contract MembershipNft is ERC721, IERC2981, AccessControl, ReentrancyGuard {
     return URI;
   }
 
-  function setURI(string memory baseURI) public {
+  function setURI(string memory baseURI) public onlyRole(DEFAULT_ADMIN_ROLE) {
     require(!frozen);
     URI = baseURI;
   }
   
   function setTokenPrice() internal {
-    PRICE_PER_WHALE_TOKEN = 0.5 ether;
-    PRICE_PER_SEAL_TOKEN = 0.1 ether;
-    PRICE_PER_PLANKTON_TOKEN = 0.05 ether;
+    PRICE_PER_WHALE_TOKEN = 0.3 ether;
+    PRICE_PER_SEAL_TOKEN = 0.2 ether;
+    PRICE_PER_PLANKTON_TOKEN = 0.1 ether;
   }
 
   function supportsInterface(bytes4 interfaceId) public view override(ERC721, AccessControl, IERC165) returns (bool) {
